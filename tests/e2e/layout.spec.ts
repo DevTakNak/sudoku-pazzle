@@ -50,6 +50,15 @@ async function expectInsideViewport(
   expect(box!.x + box!.width).toBeLessThanOrEqual(width);
 }
 
+// ダイアログは開くときに 95% から拡大するので、終わるのを待ってから大きさを測る
+async function waitForAnimations(target: Locator): Promise<void> {
+  await target.evaluate((element) =>
+    Promise.all(
+      element.getAnimations({ subtree: true }).map((a) => a.finished),
+    ),
+  );
+}
+
 // 見えているボタンとリンク(盤面のマスはボタンでもリンクでもない)が、44px 四方以上か(画面仕様書の「共通」)
 async function expectTapTargets(page: Page): Promise<void> {
   const targets = page.locator("button:visible, a:visible");
@@ -87,6 +96,7 @@ test.describe("T-505: 幅 320px で横にはみ出さず、押す部分は 44px 
     await page.getByRole("button", { name: "かんたん", exact: true }).click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toContainText("新しいゲームを始めますか?");
+    await waitForAnimations(dialog);
     await expectNoHorizontalOverflow(page, NARROW);
     await expectTapTargets(page);
     await expectInsideViewport(dialog, NARROW);
@@ -140,6 +150,7 @@ test.describe("T-505: 幅 320px で横にはみ出さず、押す部分は 44px 
     await page.goto("/play");
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toContainText("失敗しました");
+    await waitForAnimations(dialog);
     await expectNoHorizontalOverflow(page, NARROW);
     await expectTapTargets(page);
     await expectInsideViewport(dialog, NARROW);
@@ -150,6 +161,7 @@ test.describe("T-505: 幅 320px で横にはみ出さず、押す部分は 44px 
     await page.goto("/play");
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toContainText("クリア!");
+    await waitForAnimations(dialog);
     await expectNoHorizontalOverflow(page, NARROW);
     await expectTapTargets(page);
     await expectInsideViewport(dialog, NARROW);

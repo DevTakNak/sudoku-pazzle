@@ -86,11 +86,12 @@ DB、Prisma、認証、API スキーマ(OpenAPI)は使わない。API ルート�
 ```text
 sudoku-pazzle/
 ├── CLAUDE.md                 要件の仕様書(このファイル)
+├── README.md                 アプリの概要と、Makefile の使い方
 ├── AGENTS.md                 create-next-app が作るファイル(`next dev` が CLAUDE.md を書き換えないように残す)
 ├── TODO.md
 ├── AGENTS_TRIAL.md           試行中の専門エージェントの記録
-├── .vercelignore
-├── Makefile
+├── .vercelignore             Vercel に上げるファイル(ビルドに要るものだけを許可する)
+├── Makefile                  よく使うコマンド(下の「Makefile」)
 ├── .nvmrc
 ├── package.json              npm のスクリプトと lint-staged の設定
 ├── components.json           shadcn/ui の設定
@@ -126,6 +127,23 @@ sudoku-pazzle/
 ## 環境変数
 
 アプリ独自の環境変数と秘密の値は無い。`.env` のファイルも使わない。Vercel で動かすので、待ち受けるポートとアドレスも設定しない。
+
+## Makefile
+
+よく使うコマンドを、`Makefile` のターゲットにまとめた(2026-11-04 にユーザが決めた)。DB を使わないので、`seed` は作らない。
+
+| ターゲット | 中身 | 使う場面 |
+| --- | --- | --- |
+| `make init` | `npm ci` と `npx playwright install chromium` | 取得した直後、依存を入れ直すとき |
+| `make dev` | `npm run dev`(ポート 3000。使われていれば `PORT=3001 make dev` のように変える) | 開発サーバーで画面を見るとき |
+| `make build` | `npm run build` | 本番用のビルドを確かめるとき |
+| `make test` | lint、型チェック、Prettier の確認、単体テスト(カバレッジは `npm run test:coverage`) | コミットの前など、ふだんの確認 |
+| `make test-e2e` | E2E(本番のビルドをポート 3100 で起動し、PC とスマホの 2 つで動かす) | 画面に関わる変更の後 |
+| `make deploy` | `npx vercel deploy`(プレビュー) | 本番の前に、プレビューで確かめるとき |
+| `make deploy-prod` | `npx vercel deploy --prod`(本番) | プレビューで確かめた後。デプロイはユーザの指示を受けてから行う |
+
+- Claude Code の `/sandbox` が有効だと、`make dev`(Turbopack のファイルの監視)、`make test-e2e`(Chromium)、`make init` の Chromium の取得は動かない(技術ルールの `claude-code-sandbox.md`)。
+- `make deploy` と `make deploy-prod` は、Vercel CLI でログインし、`vercel link` でプロジェクトをつないだ状態で使う(`.vercel/` は git に入れない)。
 
 ## 仕様書の一覧
 
