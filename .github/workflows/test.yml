@@ -1,0 +1,52 @@
+name: test
+
+on:
+  pull_request:
+  workflow_call:
+    inputs:
+      ref:
+        description: テストするコミット(タグなど)
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+# PR に続けて push したときは、同じ PR の古い実行を止める(デプロイからの呼び出しは止めない)
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('test-pr-{0}', github.event.pull_request.number) || format('test-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
+      # E2E が落ちたときに、トレースとスクリーンショットを調べられるようにする
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          # 再実行(re-run)のときに名前が重ならないように、実行の回数を付ける
+          name: e2e-test-results-${{ github.run_attempt }}
+          path: test-results/
+          retention-days: 7

@@ -1,0 +1,115 @@
+name: deploy
+
+# 承認者が、デプロイするバージョンのタグを指定して手動で実行する
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: デプロイするタグ(v1.2.3 の形)
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+    steps:
+      - name: main から実行していることを確かめる
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::main から実行してください(今は ${GITHUB_REF})"
+          exit 1
+
+      - name: 実行した人が承認者であることを確かめる
+        env:
+          APPROVERS: ${{ vars.DEPLOY_APPROVERS }}
+          # 再実行(re-run)のときは、github.actor は最初に実行した人のままなので、再実行した人も確かめる
+          ACTORS: ${{ github.actor }} ${{ github.triggering_actor }}
+        run: |
+          # 承認者は空白かカンマで区切る。GitHub のユーザ名は大文字と小文字を区別しない
+          for actor in $ACTORS; do
+            if ! printf '%s\n' "$APPROVERS" | tr -s ', ' '\n' | grep -qixF "$actor"; then
+              echo "::error::${actor} は承認者(DEPLOY_APPROVERS)に入っていません"
+              exit 1
+            fi
+          done
+
+      - name: タグの形を確かめる
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if ! printf '%s' "$TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::タグは v1.2.3 の形で指定してください(${TAG})"
+            exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: タグがあり、main の履歴に入っていることを確かめ、コミットを決める
+        id: resolve
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if ! git rev-parse --verify --quiet "refs/tags/${TAG}^{commit}" >/dev/null; then
+            echo "::error::タグ ${TAG} がありません"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "refs/tags/${TAG}" origin/main; then
+            echo "::error::タグ ${TAG} は main の履歴に入っていません"
+            exit 1
+          fi
+          # タグの版と、そのコミットの package.json の version が同じかを確かめる
+          version=$(git show "refs/tags/${TAG}:package.json" | jq -r .version)
+          if [ "v${version}" != "$TAG" ]; then
+            echo "::error::タグ ${TAG} のコミットの package.json の version が ${version} です"
+            exit 1
+          fi
+          # 承認を待つ間にタグを動かされても、ここで確かめたコミットをテストしてデプロイする
+          echo "sha=$(git rev-parse "refs/tags/${TAG}^{commit}")" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: verify
+    uses: ./.github/workflows/test.yml
+    with:
+      ref: ${{ needs.verify.outputs.sha }}
+
+  deploy:
+    needs: [verify, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # 実行の前に、Environment の承認者の承認を求める
+    environment:
+      name: production
+      url: https://sudoku-pazzle.vercel.app
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # トークンを持つジョブなので、依存の install script は動かさない(vercel CLI は script 無しで動く)
+      - run: npm ci --ignore-scripts
+
+      # ビルドは Vercel 側で行う(make deploy-prod と同じ)
+      - run: npx vercel deploy --prod --yes
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
