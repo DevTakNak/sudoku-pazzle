@@ -36,17 +36,20 @@ flowchart LR
 
 ## フェーズ 1: 環境構築
 
-- [ ] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う
+- [x] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う(2026-11-03。更新のチェックは前回の 2026-10-24 から 2 週間たっていないので行わなかった。待ちの TODO の「ESLint 10 への更新」「TypeScript 7 への更新」は、どちらも条件を満たしていなかった(`eslint-config-next` 16.4.4、`typescript-eslint` 8.72.1 の `peerDependencies.typescript` は `>=4.8.4 <6.1.0`)。Docker を使わないので `/sandbox` は有効のまま)
+  - [x] `/sandbox` で `~/.npm` に書けず npm が `EPERM` になるので、npm のコマンドには `npm_config_cache="$TMPDIR/npm-cache"` を付ける(2026-11-03 にユーザが決めた)
+  - [x] 手元の bare リポジトリへの push は、`/sandbox` で止められる。2026-11-03 の push はユーザが自分のターミナルで行った
 - [ ] 技術ルール(`~/Development/Rules/tech/` の `node.md`、`npm.md`、`typescript.md`、`nextjs.md`、`react.md`、`shadcn-tailwind.md`、`vitest.md`、`eslint-prettier.md`、`husky-lint-staged.md`)を読み込む
-- [ ] 専門エージェント `commit-message-writer` を作る(effort の推奨を示してユーザが決める。`~/Development/Rules/AGENTS.md`)
-- [ ] 試行中の「依存ライブラリのアップデートと破壊的変更の調査」の専門エージェントを作るかをユーザに確認し、作ると決めたら作る
+- [x] 専門エージェント `commit-message-writer` を作る(effort の推奨を示してユーザが決める。`~/Development/Rules/AGENTS.md`)(2026-11-03。ユーザが medium に決めた。personal-pesticide-management の定義を元にした)
+- [x] 試行中の「依存ライブラリのアップデートと破壊的変更の調査」の専門エージェントを作るかをユーザに確認し、作ると決めたら作る(2026-11-03。ユーザが作ると決めた。`dependency-update-reviewer`、effort は high。使った結果は [AGENTS_TRIAL.md](AGENTS_TRIAL.md) に記録すると決めた)
+- [ ] 新しい会話で、`commit-message-writer` と `dependency-update-reviewer` を呼べることを確かめる(2026-11-03。`commit-message-writer` は、作った会話の中で呼べるようになり、このコミットの文案に使えた。`dependency-update-reviewer` は依存の確認のときに確かめる)
 
 ### 雛形
 
 - [x] `git init` と、手元の bare リポジトリ(`~/Development/git-local/sudoku-pazzle.git`)を `origin` にする設定(2026-11-03 に済んだ。`origin/HEAD` も作成済み)
 - [ ] `.nvmrc` を `26` にする。`node -v` と比べる(`node.md`)
 - [ ] `create-next-app` を scratchpad で作って取り込む。`CLAUDE.md` は取り込まず、`AGENTS.md` はコミットする。`.gitignore` は中身を合わせる(`nextjs.md`)
-- [ ] 入った依存の公開日を確かめ、2 週間たっていない版を下げる(`npm.md`)
+- [ ] 入った依存の公開日を確かめ、2 週間たっていない版を下げる(`npm.md`。`dependency-update-reviewer` に調べさせ、`AGENTS_TRIAL.md` に記録する)
 - [ ] ESLint と TypeScript の版を決める。待ちの TODO の「ESLint 10 への更新」「TypeScript 7 への更新」を参照する(`~/Development/Rules/TODO-waiting.md`)
 - [ ] `output: "standalone"` を設定する
 - [ ] `noindex` の meta を全ページに入れる(N-04)

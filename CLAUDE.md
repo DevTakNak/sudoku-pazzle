@@ -78,6 +78,7 @@ sudoku-pazzle/
 ├── CLAUDE.md                 要件の仕様書(このファイル)
 ├── AGENTS.md                 create-next-app が作るファイル(`next dev` が CLAUDE.md を書き換えないように残す)
 ├── TODO.md
+├── AGENTS_TRIAL.md           試行中の専門エージェントの記録
 ├── Dockerfile
 ├── .dockerignore
 ├── Makefile
