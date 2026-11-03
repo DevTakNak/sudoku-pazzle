@@ -68,15 +68,15 @@ flowchart LR
 - [x] Vitest、React Testing Library、カバレッジ(`json-summary` を含む)を入れる。`components/ui/` を計測から外す(2026-11-03。`vitest`・`@vitest/coverage-v8` 5.0.5(`latest` の 5.1.0 は 11-02 公開。4.1.12 は 4 系のバックポート)、`jsdom` 30.1.3、`@testing-library/*`。中の `vite` が 8.3.5(10-21 公開)で入るので、`vite` 8.3.4 を `--save-exact` で開発用の依存に入れた。設定は `vitest.config.mts` と `tests/setup.ts`。一時的なテストで、jsdom・React Testing Library・jest-dom・`@/`・shadcn/ui のボタンが動き、`coverage-summary.json` から `components/ui/` が外れることを確かめてから消した)
   - [x] `fsevents` のインストール後スクリプトを拒否した(2026-11-03 にユーザが決めた。同梱の部品を使うので動きは変わらない。`allowScripts` に記録し、入れ直しで警告が出ないことを確かめた)
 - [x] ESLint と Prettier を設定する。Prettier の対象に仕様書の Markdown とモックを含めるか、`prettier-plugin-tailwindcss` を使うかをユーザに確認する(`eslint-prettier.md`)(2026-11-03。ユーザが決めた: `*.md` とモックは整形しない(`.prettierignore`)、`prettier-plugin-tailwindcss` 0.8.1 を使う。`prettier` 3.9.10 は `--save-exact`。`eslint-config-prettier` 10.1.8 を ESLint の設定の最後に置いた)
-  - [ ] 全体の整形(`npm run format`)だけのコミットを作り、ハッシュを `.git-blame-ignore-revs` に書く(`eslint-prettier.md`。雛形と shadcn/ui の生成物の 5 ファイル)
-- [ ] Husky と lint-staged を入れる(`husky-lint-staged.md`)
+  - [x] 全体の整形(`npm run format`)だけのコミットを作り、ハッシュを `.git-blame-ignore-revs` に書く(`eslint-prettier.md`。雛形と shadcn/ui の生成物の 5 ファイル)(2026-11-03。コミット f4fd5b8。`git config blame.ignoreRevsFile` は `/sandbox` で `.git/config` に書けず、ユーザが自分のターミナルで設定した)
+- [x] Husky と lint-staged を入れる(`husky-lint-staged.md`)(2026-11-03。`husky` 9.1.7、`lint-staged` 17.6.0。`.husky/pre-commit` は `npx lint-staged`。`husky init` は `/sandbox` で `core.hooksPath` を書けず、ユーザが自分のターミナルで `npx husky` を実行した)
 - [x] `typecheck`、`test`、`format`、`format:check` の npm スクリプトを置く(2026-11-03。`test:coverage` も置いた)
 - [ ] lint、型チェック、テスト、ビルドが通ることを確かめてコミットする
 
 ### 振り返り
 
 - [ ] フェーズ内で実施した作業において、今後の開発に活かせそうなルールがないか振り返って確認し、ルールとして採用するべき項目があれば、提案する
-  - 提案の候補(2026-11-03 に出てきたもの): `/sandbox` の中では、Next.js のビルドも Turbopack の CSS の loader がローカルのポートで待ち受けるため `allowLocalBinding` が要った(開発サーバーだけではない)。npm は `~/.npm` に書けず `EPERM`(「root-owned files」と出るが原因は囲い)になる。`next/font/google` の取得はプロキシを通らない
+  - 提案の候補(2026-11-03 に出てきたもの): `/sandbox` の中では、Next.js のビルドも Turbopack の CSS の loader がローカルのポートで待ち受けるため `allowLocalBinding` が要った(開発サーバーだけではない)。npm は `~/.npm` に書けず `EPERM`(「root-owned files」と出るが原因は囲い)になる。`next/font/google` の取得はプロキシを通らない。`.git/config` に書けず、`git config` と `husky` の設定はユーザに頼んだ
 
 ## フェーズ 2: 問題の生成
 
