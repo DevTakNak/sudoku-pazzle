@@ -29,6 +29,8 @@ flowchart LR
 - [x] Reload Window をして、新しい会話で shadcn/ui MCP のツールを使えることを確かめる(`registries` に `@shadcn` を明示して検索する)(2026-11-03。新しい会話で `@shadcn` を明示して「dialog」を検索し、結果が返った。`components.json` がまだ無くても検索できた)
 - [x] このプロジェクトで Vercel プラグインを無効にするかを決め、無効にするなら設定する(2026-11-03 にユーザが無効にすると決めた。`.claude/settings.local.json` の `enabledPlugins` で無効にした)
 - [x] Reload Window をして、新しい会話で Vercel のツールとセッションの始めの Vercel の情報が読み込まれていないことを確かめる(2026-11-03。新しい会話のツール一覧に Vercel のツールが無く、セッションの始めにも Vercel の情報が無かった)
+- [x] デプロイ先を Vercel に変えたので、Vercel プラグインを有効に戻す。`.claude/settings.local.json` の `enabledPlugins` の `"vercel@claude-plugins-official"` を `true` にするか行を消す(Claude はこのファイルを書き換えられないので、ユーザが直す)(2026-11-03 にユーザが決めた。ユーザが `true` にした)
+- [x] Reload Window をして、新しい会話で Vercel のツールを使えることを確かめる(2026-11-03。Vercel の MCP のツールが読み込まれ、`search_vercel_documentation` が結果を返した。Vercel CLI はまだ入っていない(フェーズ 7 で入れ方を決める))
 
 ### 振り返り
 
@@ -53,7 +55,7 @@ flowchart LR
 - [x] 入った依存の公開日を確かめ、2 週間たっていない版を下げる(`npm.md`。`dependency-update-reviewer` に調べさせ、`AGENTS_TRIAL.md` に記録する)(2026-11-03。ユーザが決めた: `tailwindcss` と `@tailwindcss/turbopack` を 4.3.4 から 4.3.3 に下げた(`^4.3.3`)。`react`・`react-dom` を 19.3.1、`@types/node` を 26.6.5 に上げた。`next`・`eslint-config-next` は 16.4.2 のまま)
   - [x] `npm audit` は moderate 16 件(本番の依存は 0 件)。根は ESLint 系の中の `minimatch`(GHSA-g3hv-75wg-m249、`< 11.0.1`)だけで、ESLint 10 や各プラグインの最新版もまだ 11 未満に依存するため、上流の修正待ちとして見送る(2026-11-03 にユーザが決めた。開発用の依存だけで本番に入らず、入力はリポジトリの中のパターンだけのため)。再確認はフェーズ 2 と 7 の項目
 - [x] ESLint と TypeScript の版を決める。待ちの TODO の「ESLint 10 への更新」「TypeScript 7 への更新」を参照する(`~/Development/Rules/TODO-waiting.md`)(2026-11-03。ESLint は 9.39.5(9 系の最後。9 系は 2026-08-06 にサポート終了だが、10 は待ちの TODO の条件を満たしていない)。TypeScript は 6.0.3 にするとユーザが決めた。`tsconfig.json` は雛形のままで型チェックが通った)
-- [x] `output: "standalone"` を設定する(2026-11-03。ビルドで `.next/standalone/server.js` ができることを確かめた)
+- [x] `output: "standalone"` を設定する(2026-11-03。ビルドで `.next/standalone/server.js` ができることを確かめた。同じ日に、デプロイ先を Vercel に変えたので外した)
 - [x] `noindex` の meta を全ページに入れる(N-04)(2026-11-03。`src/app/layout.tsx` の `metadata.robots`。ビルドした `/` と `/_not-found` の HTML に入っていることを確かめた。あわせて `lang="ja"` とタイトルを直した)
 - [x] 雛形の Google Fonts(Geist)を外し、端末の標準のフォントにする(2026-11-03 にユーザが決めた。`src/components/CLAUDE.md` の「共通」に書いた。`/sandbox` の中では Turbopack のフォントの取得がプロキシを通らず、ビルドが失敗したため)
 - [x] インストール後スクリプトの承認を確かめる(`npm.md`)(2026-11-03。`package-lock.json` に `hasInstallScript` を持つものは 0 件で、承認するものは無かった)
@@ -176,7 +178,7 @@ flowchart LR
 - [ ] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う
 - [ ] 技術ルール(`playwright.md`)を読み込む
 - [ ] 専門エージェント `e2e-test-writer` を作る(effort の推奨を示してユーザが決める)
-- [ ] Playwright Test を入れ、standalone のビルドで起動する設定にする。PC とスマホの幅のプロジェクトを作る
+- [ ] Playwright Test を入れ、本番のビルド(`next build` の後に `next start`)で起動する設定にする。PC とスマホの幅のプロジェクトを作る(2026-11-03 にデプロイ先を Vercel に変え、standalone をやめたため。`playwright.md` の standalone の手順は使わない)
 - [ ] T-501〜T-508 を書き、`--repeat-each 3` で安定することを確かめる
 - [ ] 本番のコードを壊して、狙ったテストが落ちることを確かめる
 
@@ -204,26 +206,27 @@ flowchart LR
 デプロイはユーザの指示を受けてから行う。
 
 - [ ] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う
-- [ ] 技術ルール(`docker.md`、`cloud-run.md`)を読み込む
+- [ ] 技術ルール(`vercel.md`)を読み込む
+
+2026-11-03 にデプロイ先を Cloud Run から Vercel に変えた(`CLAUDE.md` の「デプロイ先を Vercel にした理由」)。Cloud Run 用の項目(Google Cloud のプロジェクト、Dockerfile、Artifact Registry、予算の通知など)は消した。
 
 ### 準備
 
-- [ ] Cloud Run と Artifact Registry の無料枠を、公式の情報で確かめ直す。2026-11-03 の時点で、製品ページと Firebase App Hosting のページで Cloud Run の CPU とメモリの無料枠の数値が違っていた。料金ページの本文は取得できなかった。送信データの無料枠(北米内で月 1 GiB)はドキュメントで確かめた
-- [ ] Google Cloud のプロジェクトと gcloud の名前付きの構成を作り、支払いアカウントを紐付ける。構成の名前とプロジェクト ID を `CLAUDE.md` に書く(`cloud-run.md`)
-- [ ] 最初から有効な API に料金がかからないかを確かめ、止めるかを決める
+- [ ] Hobby プランの無料枠と利用条件(個人・非商用)を、公式の情報で確かめ直す(`vercel.md`)
+- [ ] Vercel CLI の入れ方(グローバルに入れるか、版を固定して `npx` で動かすか)を決めてユーザに確認し、入れたら `~/Development/Rules/tools.md` に書く
+- [ ] Vercel のアカウントを用意し、CLI でログインする(ユーザの操作)
 - [ ] `npm audit`(全体と `--omit=dev`)と `next` のセキュリティの指摘をもう一度確かめる(フェーズ 1 で `minimatch` を見送り、フェーズ 2 で Next.js の 11 月の指摘を確かめる。その後に出たものも見る)
-- [ ] Node.js 26 の公開から 2 週間たった版をイメージに使う。26.13.0 は 2026-10-28 公開なので、2026-11-11 以降なら条件を満たす
+- [ ] `package.json` の `engines.node` に `"26.x"` を書き、Vercel で Node.js 26 を使う(`vercel.md`。マイナー版とパッチ版は Vercel が上げるので、公開から 2 週間たった版は選べない)
 - [ ] `/security-review` の対象になる変更があるかを確かめ、あれば実行して記録する
 
-### イメージとデプロイ
+### デプロイ
 
-- [ ] Dockerfile と `.dockerignore` を作る(`HOSTNAME=0.0.0.0`。テスト、`.env*`、`.playwright-mcp/` などを入れない)
-- [ ] 手元でイメージを動かして確かめる
-- [ ] Artifact Registry のリポジトリを作り、クリーンアップポリシーで最新の数版だけを残す
-- [ ] 実行用のサービスアカウントを作る
-- [ ] Cloud Run にデプロイする(`us-central1`、最小 0、最大はリビジョンとサービス全体の両方)
-- [ ] 予算の通知を設定する
-- [ ] `describe` で設定を読み出して確かめる
+- [ ] `.vercelignore` を作る(テスト、テストの設定、`.env*`、`.playwright-mcp/`、`coverage/` などを入れない)
+- [ ] `next build` の出力で、どのページも静的(○ Static)になっていて、サーバーで動く処理が無いことを確かめる
+- [ ] CLI でプロジェクトをつなぐ(`vercel link`)。GitHub 連携は設定しない。`.vercel/` が `.gitignore` に入ったことを確かめる
+- [ ] プロジェクトの設定(Node.js の版、ビルドのコマンド、Git の連携が無いこと、Deployment Protection)を読み出して確かめる
+- [ ] プレビューにデプロイして確かめてから、本番にデプロイする
+- [ ] 本番の URL で `noindex` が付いていることを確かめる(N-04)
 - [ ] 本番の画面で確かめる項目の一覧を作り、ユーザに自分のブラウザで確かめてもらう
 
 ### 振り返り
@@ -251,7 +254,7 @@ flowchart LR
 - [ ] GitHub のリポジトリを公開にするか非公開にするかをユーザに確認する(無料プランの非公開ではブランチの保護と Environments の承認を使えない)
 - [ ] リポジトリを作り、`git remote set-url origin` で向き先を変える
 - [ ] リポジトリの設定(squash マージだけを許可、マージしたブランチの自動削除)
-- [ ] PR で動くテストのワークフローと、承認者だけがタグを指定してデプロイできるワークフロー(Workload Identity Federation)
+- [ ] PR で動くテストのワークフローと、承認者だけがタグを指定してデプロイできるワークフロー(デプロイ先を Vercel に変えたので、Workload Identity Federation は使わない。Vercel CLI をワークフローで動かすときの認証の方法を、公式の情報で調べてユーザに確認する。`github-flow.md` と `github-actions.md` の Google Cloud 向けの部分は当てはまらない)
 - [ ] PR のテンプレートと `CHANGELOG.md`
 - [ ] TODO.md の未完了の項目を Issue に移し、TODO.md にはその後の扱い(Issue で管理すること)を書く
 

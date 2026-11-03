@@ -13,7 +13,7 @@
 | 課金の方針 | 開発も運用も無料枠を前提にする。欲しい機能が無料枠で実現できないときは、そのときに課金を検討する |
 | データの保存 | ブラウザの中だけ(`localStorage`)。DB は使わない |
 | 技術 | 標準の技術スタック(下の「技術」) |
-| デプロイ先 | Google Cloud Run の `us-central1`(送信データの無料枠が北米内だけのため) |
+| デプロイ先 | Vercel の Hobby プラン(下の「デプロイ先を Vercel にした理由」) |
 
 ## 要件
 
@@ -56,20 +56,30 @@
 | --- | --- |
 | 言語 | TypeScript(`strict`) |
 | ランタイム | Node.js 26(2026-10-28 に LTS。サポート終了は 2029-04-30。公式のリリース予定で 2026-11-03 に確かめた) |
-| Web アプリ | Next.js(App Router、`output: "standalone"`) |
+| Web アプリ | Next.js(App Router) |
 | UI | shadcn/ui + Tailwind CSS |
 | テスト | Vitest + React Testing Library、E2E は Playwright Test |
 | lint・整形 | ESLint + Prettier、コミット前は Husky + lint-staged |
-| デプロイ | Docker イメージを Artifact Registry に push し、Cloud Run で動かす |
+| デプロイ | Vercel の Hobby プランに、Vercel CLI でデプロイする |
 | CI/CD | MVP の後に GitHub の Issue と PR、GitHub Actions |
 
 DB、Prisma、認証、API スキーマ(OpenAPI)は使わない。API ルートも作らない。
 
+### デプロイ先を Vercel にした理由
+
+標準の技術スタックのデプロイ先は Cloud Run だが、このプロジェクトは Vercel にした(2026-11-03 にユーザが決めた。最初は Cloud Run にしていた)。
+
+- API も DB も無く、Cloud Run の自由度(コンテナで何でも動かせること)を使う場面が無い。
+- Dockerfile、Artifact Registry、予算の通知、インスタンス数の上限などの管理が要らない。
+- Hobby プランは、無料枠を超えても課金されずに止まる。カードの登録も要らない。
+- 日本から使うので、CDN で静的なページを近くから返せる。Cloud Run の `us-central1` では毎回米国まで往復し、最小インスタンスが 0 だとコールドスタートもある。
+- Hobby プランの条件(個人・非商用)に合う。広告や課金を入れるなら、デプロイ先を見直す(`vercel.md`)。
+
 ### 本番の構成
 
-- Cloud Run の最小インスタンスは 0。最大はリビジョンとサービス全体の両方に小さな値を指定する。
-- Artifact Registry はクリーンアップポリシーで最新の数版だけを残す。
-- 予算の通知を設定する。無料枠の条件は、デプロイの準備で公式の情報を確かめ直す。
+- Vercel の GitHub 連携(push で自動デプロイ)は設定しない。デプロイは、指示を受けてから Vercel CLI で行う。
+- テスト、テストの設定、`.env*` などは `.vercelignore` でデプロイから外す。
+- 無料枠と利用条件は、デプロイの準備で公式の情報を確かめ直す(`vercel.md`)。
 
 ## ディレクトリ構成
 
@@ -79,8 +89,7 @@ sudoku-pazzle/
 ├── AGENTS.md                 create-next-app が作るファイル(`next dev` が CLAUDE.md を書き換えないように残す)
 ├── TODO.md
 ├── AGENTS_TRIAL.md           試行中の専門エージェントの記録
-├── Dockerfile
-├── .dockerignore
+├── .vercelignore
 ├── Makefile
 ├── .nvmrc
 ├── src/
@@ -104,12 +113,7 @@ sudoku-pazzle/
 
 ## 環境変数
 
-アプリ独自の環境変数と秘密の値は無い。`.env` のファイルも使わない。
-
-| 変数名 | 必須 | 説明 |
-| --- | --- | --- |
-| `PORT` | 本番で必須 | 待ち受けるポート。Cloud Run が設定する |
-| `HOSTNAME` | 本番で必須 | 待ち受けるアドレス。standalone の出力がすべての接続を受けるように、Dockerfile で `0.0.0.0` にする |
+アプリ独自の環境変数と秘密の値は無い。`.env` のファイルも使わない。Vercel で動かすので、待ち受けるポートとアドレスも設定しない。
 
 ## 仕様書の一覧
 
@@ -127,7 +131,7 @@ API 仕様書と ER 図は、API と DB を使わないので作らない。
 検討結果は [MCP_SERVERS.md](MCP_SERVERS.md)。
 
 - shadcn/ui MCP(local スコープ、`shadcn@4.22.1` に固定): UI 部品を探すときに使う。検索では `registries` に `@shadcn` を明示する。追加のコマンドは `get_add_command_for_items` で取り、`@latest` をプロジェクトで使う版に置き換えて実行する(`shadcn-tailwind.md`)
-- Vercel プラグイン: デプロイ先が Cloud Run で使わないので、`.claude/settings.local.json` で無効にしている
+- Vercel プラグイン: デプロイ先を Vercel にしたので、有効にする(2026-11-03 にユーザが決めた。それまでは `.claude/settings.local.json` で無効にしていた)
 
 ## 適用する技術ルール
 
@@ -137,5 +141,5 @@ API 仕様書と ER 図は、API と DB を使わないので作らない。
 - `nextjs.md`、`react.md`、`shadcn-tailwind.md`
 - `vitest.md`、`playwright.md`
 - `eslint-prettier.md`、`husky-lint-staged.md`
-- `docker.md`、`cloud-run.md`
+- `vercel.md`
 - `github-flow.md`、`github-actions.md`(MVP の後)
