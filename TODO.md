@@ -296,12 +296,13 @@ flowchart LR
 ### デプロイ
 
 - [x] `.vercelignore` を作る(テスト、テストの設定、`.env*`、`.playwright-mcp/`、`coverage/` などを入れない)(2026-11-04。ルート直下を全部外し、ビルドに要る `src`・`package.json`・`package-lock.json`・`next.config.ts`・`tsconfig.json` だけを許可する形にした。`src` の中の仕様書(`CLAUDE.md`)とモックも外した。Vercel の CLI が使う `ignore` パッケージで手元のファイルに当てはめ、上がるのは 42 ファイルで、テスト・仕様書・`.env*` などが入らないことを確かめた。42 ファイルだけを作業用のフォルダに写してビルドが通ることも確かめた。`prepare` の husky は、`.git` が無いとメッセージを返すだけで失敗しない(`husky@9.1.7` のコードで確かめた)。実際に上がったファイルは、デプロイの後に確かめる)
-  - [ ] プレビューにデプロイした後に、デプロイに上がったファイルの一覧が 42 ファイルと同じかを確かめる(2026-11-04 に追加)
+  - [x] プレビューにデプロイした後に、デプロイに上がったファイルの一覧が 42 ファイルと同じかを確かめる(2026-11-04 に追加)(2026-11-04。下の最初のデプロイで、`npx vercel api /v6/deployments/<ID>/files` で読み出し、42 ファイルで、仕様書・モック・テスト・`.env*` は無かった)
 - [x] `next build` の出力で、どのページも静的(○ Static)になっていて、サーバーで動く処理が無いことを確かめる(2026-11-04。上の 42 ファイルだけでのビルドで、`/`、`/_not-found`、`/play`、`/stats` が ○ Static。`favicon.ico` も `prerender-manifest.json` に入り、事前に作られる。`/`・`/play`・`/stats` の HTML に `<meta name="robots" content="noindex, nofollow"/>` が入っていた)
 - [x] CLI でプロジェクトをつなぐ(`vercel link`)。GitHub 連携は設定しない。`.vercel/` が `.gitignore` に入ったことを確かめる(2026-11-04。ユーザがプロジェクト名を `sudoku-pazzle` に決めた。`npx vercel link --yes --project sudoku-pazzle` で、Hobby のチーム(Toddling beginners)にプロジェクトを作った。CLI が `.gitignore` に `.vercel` を足した。CLI が `VERCEL_OIDC_TOKEN` だけを書いた `.env.local` も作った。アプリでは使わない。git と `.vercelignore` の両方で外れていることを確かめた後、プロジェクトの「`.env` のファイルを使わない」に合わせて、ユーザの了承を得て消した)
 - [x] プロジェクトの設定(Node.js の版、ビルドのコマンド、Git の連携が無いこと、Deployment Protection)を読み出して確かめる(2026-11-04。`npx vercel project inspect` と `npx vercel api /v9/projects/sudoku-pazzle` で読み出した。フレームワークは Next.js、Node.js は 26.x、ビルド・インストールのコマンドと出力先は既定(`null`)、Git の連携(`link`)は無し、環境変数は 0 件。Deployment Protection は Standard Protection(`ssoProtection` が `all_except_custom_domains`。Vercel Authentication)で、公式の説明(https://vercel.com/docs/deployment-protection)では、本番のドメインは保護されず、プレビューとデプロイごとの URL は Vercel にログインした人だけが開ける。本番は認証をかけない要件に合うので、このままにした。関数のリージョンは `iad1` だが、関数は無い)
 - [ ] プレビューにデプロイして確かめてから、本番にデプロイする
-- [ ] 本番の URL で `noindex` が付いていることを確かめる(N-04)
+  - 2026-11-04 に、ユーザの指示でプレビューのつもりで `npx vercel deploy --yes` を実行したが、プロジェクトの最初のデプロイだったので、Vercel が自動で本番に割り当て、`https://sudoku-pazzle.vercel.app` が公開された(CLI の出力の `hint` で分かった。2 回目からはプレビューになる)。事前に確かめていなかった。コミット `フェーズ 7 のデプロイの準備` の内容で、ビルドのログで Node.js 26、4 ページとも ○ Static、husky は失敗しないことを確かめた。`esbuild` の install script は許可しなくてもビルドが通った。Next.js の 11 月のセキュリティリリースは入っていない
+- [x] 本番の URL で `noindex` が付いていることを確かめる(N-04)(2026-11-04。curl で `/`・`/play`・`/stats` が 200(`x-vercel-cache: PRERENDER`)で、`<meta name="robots" content="noindex, nofollow"/>` が付いていた。無いページは 404 で `noindex` 付き。デプロイごとの URL は、ログインしていないと 302(Vercel Authentication)になった)
 - [ ] 本番の画面で確かめる項目の一覧を作り、ユーザに自分のブラウザで確かめてもらう
 
 ### 振り返り
