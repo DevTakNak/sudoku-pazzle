@@ -1,0 +1,8 @@
+# 生成物(.gitignore にあるものは Prettier が読むので重ねない)
+package-lock.json
+
+# 仕様書などの Markdown(表のセルを直すたびに表全体が書き換わるのを避ける。2026-11-03 にユーザが決めた)
+*.md
+
+# 画面のモック(2026-11-03 にユーザが決めた)
+src/components/mocks/

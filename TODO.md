@@ -60,11 +60,17 @@ flowchart LR
 
 ### 道具
 
-- [ ] shadcn/ui を `init` し、足された依存の公開日を確かめる(`shadcn-tailwind.md`)
-- [ ] Vitest、React Testing Library、カバレッジ(`json-summary` を含む)を入れる。`components/ui/` を計測から外す
-- [ ] ESLint と Prettier を設定する。Prettier の対象に仕様書の Markdown とモックを含めるか、`prettier-plugin-tailwindcss` を使うかをユーザに確認する(`eslint-prettier.md`)
+- [x] shadcn/ui を `init` し、足された依存の公開日を確かめる(`shadcn-tailwind.md`)(2026-11-03。`shadcn@4.22.1 init --defaults`。土台は Base UI、プリセットは base-nova(ユーザが決めた))
+  - [x] `init` が Geist のフォントを `layout.tsx` に入れ直したので外し、端末の標準のフォントに戻した(画面仕様書の「共通」)
+  - [x] 2 週間たっていない版で入った 3 つを下げた: `cn` 0.5.2 から 0.5.0、`lucide-react` 1.66.0 から 1.59.0(1.60.0 は公開から 13.9 日だった)、`shadcn` 4.23.0 から 4.22.1(MCP と同じ版)
+  - [x] CSS の `@import` だけで読む `shadcn` と `tw-animate-css` を `devDependencies` に移した(`nextjs.md`。`.next/standalone/node_modules` に入っていないことを確かめた)
+  - [x] `npm audit` は 21 件(low 2、moderate 19。本番の依存は 0 件)に増えた。増えた分は `shadcn` の中の `ts-morph` 経由の `minimatch`(上の見送りと同じ根)と、`@shadcn/registry` の中の `deepmerge`(low、GHSA-gcqx-w48m-w2h4。最新の 4.3.1 も対象で、直った版が無い)。どちらも開発用の依存なので、`minimatch` と同じく上流待ちとし、フェーズ 2 と 7 の項目で確かめる
+- [x] Vitest、React Testing Library、カバレッジ(`json-summary` を含む)を入れる。`components/ui/` を計測から外す(2026-11-03。`vitest`・`@vitest/coverage-v8` 5.0.5(`latest` の 5.1.0 は 11-02 公開。4.1.12 は 4 系のバックポート)、`jsdom` 30.1.3、`@testing-library/*`。中の `vite` が 8.3.5(10-21 公開)で入るので、`vite` 8.3.4 を `--save-exact` で開発用の依存に入れた。設定は `vitest.config.mts` と `tests/setup.ts`。一時的なテストで、jsdom・React Testing Library・jest-dom・`@/`・shadcn/ui のボタンが動き、`coverage-summary.json` から `components/ui/` が外れることを確かめてから消した)
+  - [x] `fsevents` のインストール後スクリプトを拒否した(2026-11-03 にユーザが決めた。同梱の部品を使うので動きは変わらない。`allowScripts` に記録し、入れ直しで警告が出ないことを確かめた)
+- [x] ESLint と Prettier を設定する。Prettier の対象に仕様書の Markdown とモックを含めるか、`prettier-plugin-tailwindcss` を使うかをユーザに確認する(`eslint-prettier.md`)(2026-11-03。ユーザが決めた: `*.md` とモックは整形しない(`.prettierignore`)、`prettier-plugin-tailwindcss` 0.8.1 を使う。`prettier` 3.9.10 は `--save-exact`。`eslint-config-prettier` 10.1.8 を ESLint の設定の最後に置いた)
+  - [ ] 全体の整形(`npm run format`)だけのコミットを作り、ハッシュを `.git-blame-ignore-revs` に書く(`eslint-prettier.md`。雛形と shadcn/ui の生成物の 5 ファイル)
 - [ ] Husky と lint-staged を入れる(`husky-lint-staged.md`)
-- [ ] `typecheck`、`test`、`format`、`format:check` の npm スクリプトを置く
+- [x] `typecheck`、`test`、`format`、`format:check` の npm スクリプトを置く(2026-11-03。`test:coverage` も置いた)
 - [ ] lint、型チェック、テスト、ビルドが通ることを確かめてコミットする
 
 ### 振り返り
@@ -78,7 +84,7 @@ flowchart LR
 
 - [ ] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う
 - [ ] 2026-11-03 の Next.js のセキュリティリリース(medium 7 件)の影響する版を確かめ、`next` 16.4.2 が対象なら、上げるかをユーザに確認する(フェーズ 1 で決めた)
-- [ ] `npm audit` の `minimatch` の指摘(フェーズ 1 で見送った)と、ESLint 10 への更新の条件をもう一度確かめる
+- [ ] `npm audit` の `minimatch` と `deepmerge` の指摘(フェーズ 1 で見送った)と、ESLint 10 への更新の条件をもう一度確かめる
 - [ ] 技術ルール(`typescript.md`、`vitest.md`)を読み込む
 - [ ] 専門エージェント `unit-test-writer`、`code-reviewer`、`type-strictness-reviewer` を作る(effort の推奨を示してユーザが決める)
 
