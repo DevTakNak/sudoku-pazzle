@@ -565,15 +565,16 @@ describe("T-407: ゲームの終了後はキーとボタンが効かない", () 
     ["失敗", failedGame, 3],
     ["クリア", clearedGame, 3],
   ])(
-    "T-407: %sしたゲームでは、キーを押しても盤面・保存したゲーム・成績が変わらず、ボタンは押せない",
-    async (_label, makeGame, selectedCell) => {
+    "T-407: %sしたゲームでは、マスを押しても選べず、キーを押しても盤面・保存したゲーム・成績が変わらず、ボタンは押せない",
+    async (_label, makeGame, cell) => {
       const game = makeGame();
       seedGame(game);
       seedStats(STATS);
       const user = userEvent.setup();
       renderScreen(<GameScreen />);
-      // ダイアログが開いていても選べるよう、押す操作は fireEvent で行う
-      fireEvent.click(cellAt(selectedCell));
+      // ダイアログの外の盤面を押す操作は、ダイアログに止められないよう fireEvent で送る
+      fireEvent.click(cellAt(cell));
+      expect(selectedIndex()).toBeNull();
       const before = boardSignature();
 
       for (const keys of KEYS_IGNORED_AFTER_END) {

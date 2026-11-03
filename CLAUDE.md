@@ -92,15 +92,27 @@ sudoku-pazzle/
 ├── .vercelignore
 ├── Makefile
 ├── .nvmrc
+├── package.json              npm のスクリプトと lint-staged の設定
+├── components.json           shadcn/ui の設定
+├── eslint.config.mjs         ESLint の設定
+├── vitest.config.mts         Vitest の設定(カバレッジを含む)
+├── playwright.config.ts      Playwright Test の設定(本番のビルドで起動)
+├── .husky/                   コミット前の確認(lint-staged)
 ├── src/
 │   ├── app/                  ルーティング(/、/play、/stats)
 │   ├── components/
 │   │   ├── CLAUDE.md         画面仕様書
 │   │   ├── mocks/            画面のモック(HTML)
 │   │   ├── ui/               shadcn/ui が生成するコンポーネント
-│   │   └── ...               画面のコンポーネント
+│   │   ├── game-store.ts     画面の状態のストア(ゲームと成績、localStorage との同期)
+│   │   ├── game-provider.tsx ストアを画面に渡す Provider
+│   │   ├── use-puzzle-generator.ts  Web Worker で問題を作るフック
+│   │   ├── message-dialog.tsx       ダイアログの共通部品
+│   │   ├── labels.ts         画面の文言(難易度の名前など)
+│   │   └── ...               画面のコンポーネント(ホーム、ゲーム、盤面、成績など)
 │   └── lib/
 │       ├── CLAUDE.md         ゲームのルールと保存形式の仕様書
+│       ├── utils.ts          shadcn/ui が生成する補助関数(`cn`)
 │       ├── sudoku/           問題の生成、解く処理、難易度の判定、Web Worker
 │       ├── game/             ゲームの状態の変化(入力、間違い、元に戻すなど)
 │       └── storage/          localStorage の読み書き

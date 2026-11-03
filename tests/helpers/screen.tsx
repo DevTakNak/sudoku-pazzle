@@ -66,6 +66,8 @@ function Tree({ screenElement }: { screenElement: ReactNode }) {
 export interface ScreenRender extends RenderResult {
   // 画面だけを外す(Provider とストアは残す)。画面を離れたときの動きを確かめる
   removeScreen: () => void;
+  // 同じ Provider とストアのまま、画面を描画し直す(ほかの画面へ移って戻ったときの動きを確かめる)
+  showScreen: (ui: ReactNode) => void;
 }
 
 // <GameProvider><画面 /></GameProvider> で描画する
@@ -74,6 +76,7 @@ export function renderScreen(ui: ReactNode): ScreenRender {
   return {
     ...result,
     removeScreen: () => result.rerender(<Tree screenElement={null} />),
+    showScreen: (next) => result.rerender(<Tree screenElement={next} />),
   };
 }
 

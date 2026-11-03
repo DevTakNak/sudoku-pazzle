@@ -50,11 +50,6 @@ export class FakeStorage implements Storage {
     this.data.set(key, value);
   }
 
-  // 保存されている文字列をそのまま読む(getItem の回数に数えない)
-  raw(key: string): string | null {
-    return this.data.get(key) ?? null;
-  }
-
   // 呼び出しの記録だけを空にする(保存の中身は残す)
   resetCalls(): void {
     this.setItemCalls.length = 0;

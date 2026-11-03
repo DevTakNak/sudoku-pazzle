@@ -22,7 +22,11 @@ import {
   withNotes,
   withValues,
 } from "../../../helpers/game";
-import { UNIQUE_PUZZLE, UNIQUE_SOLUTION } from "../../../helpers/grid";
+import {
+  UNIQUE_PUZZLE,
+  UNIQUE_SOLUTION,
+  isSolvedGrid,
+} from "../../../helpers/grid";
 
 // 前提: マス 2(BLANK_A)の解は 4。誤りの数字には 1 を使う
 const WRONG = 1;
@@ -32,6 +36,11 @@ describe("前提", () => {
     expect(EDGE_PUZZLE[0]).toBe(0);
     expect(EDGE_PUZZLE[80]).toBe(0);
     expect(countSolutions(EDGE_PUZZLE)).toBe(1);
+    // UNIQUE_SOLUTION はルールを満たし、手がかりとも合うので、ただ 1 つの解はこれになる
+    expect(isSolvedGrid(UNIQUE_SOLUTION)).toBe(true);
+    EDGE_PUZZLE.forEach((v, i) => {
+      if (v !== 0) expect(UNIQUE_SOLUTION[i]).toBe(v);
+    });
     expect(UNIQUE_SOLUTION[0]).toBe(5);
     expect(UNIQUE_SOLUTION[80]).toBe(9);
   });

@@ -600,7 +600,7 @@ describe("T-415: 成績の記録(G-54、G-73)", () => {
     expect(store.getSnapshot().stats).toEqual(recorded);
     expect(store.getSnapshot().stats.easy.cleared).toBe(1);
     expect(storage.setItemCalls).toEqual([GAME_KEY]);
-    // この画面の間に更新したことは、後の更新で消えない(推測: 設計に明記なし)
+    // ページを開いている間に更新したことは、後の更新で消えない(画面仕様書の「クリアのダイアログ」)
     expect(store.getSnapshot().bestUpdated).toBe(true);
   });
 

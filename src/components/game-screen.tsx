@@ -13,13 +13,11 @@ import { MAX_MISTAKES } from "@/lib/game/types";
 import type { GameState } from "@/lib/game/types";
 import { colOf, rowOf } from "@/lib/sudoku/grid";
 
-import { Board } from "./board";
+import { Board, DIGITS } from "./board";
 import { ClearedDialog, FailedDialog } from "./game-dialogs";
 import { useGameSnapshot, useGameStore } from "./game-provider";
 import { DIFFICULTY_LABELS } from "./labels";
 import { Loading } from "./loading";
-
-const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
 const ARROW_MOVES: Record<string, [number, number]> = {
   ArrowUp: [-1, 0],

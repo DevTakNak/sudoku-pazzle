@@ -36,7 +36,7 @@ export function isDigit(digit: number): boolean {
   return Number.isInteger(digit) && digit >= 1 && digit <= 9;
 }
 
-export function snapshotOf(state: GameState, index: number): CellSnapshot {
+function snapshotOf(state: GameState, index: number): CellSnapshot {
   return {
     index,
     value: state.values[index]!,

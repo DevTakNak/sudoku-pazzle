@@ -493,6 +493,22 @@ describe("T-411: その場でクリアしたとき", () => {
     },
   );
 
+  it("T-411: クリアしたその場で更新したあと、ページを開いたまま画面を離れて戻っても、更新の表示が出る", async () => {
+    seedGame(almostCleared());
+    seedStats(statsWithEasy({ cleared: 3, failed: 0, bestSeconds: 800 }));
+    const { view } = await clearInPlace();
+    expect(screen.getByText(UPDATED_MESSAGE)).toBeInTheDocument();
+
+    // ホームや成績へ移った(ゲーム画面を外した)後、ゲーム画面に戻る
+    view.removeScreen();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    view.showScreen(<GameScreen />);
+
+    const dialog = screen.getByRole("alertdialog", { name: "クリア!" });
+    expect(within(dialog).getByText(UPDATED_MESSAGE)).toBeInTheDocument();
+    expect(savedStats()!.easy.cleared).toBe(4);
+  });
+
   it("T-411: クリアしたその場で出したあと、再読み込みすると同じダイアログが出るが、更新の表示は出ず、成績は重ならない", async () => {
     seedGame(almostCleared());
     seedStats(statsWithEasy({ cleared: 3, failed: 0, bestSeconds: 800 }));

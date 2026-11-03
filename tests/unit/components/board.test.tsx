@@ -159,6 +159,26 @@ describe("T-404: マスの表示", () => {
     expect(cellAt(6).textContent).toBe(""); // 空欄
   });
 
+  it("T-404: メモは 3×3 に並べ、数字 d を左上から数えて d 番目の位置に出す", () => {
+    renderBoard(withNotes(freshGame(), { 5: [1, 2, 5, 9] }));
+
+    // 読み上げ用ではない、見た目のメモの並び(9 個の位置)
+    const memo = cellAt(5).querySelector('[aria-hidden="true"]');
+    expect(memo).not.toBeNull();
+    expect(memo).toHaveClass("grid", "grid-cols-3");
+    expect([...memo!.children].map((c) => c.textContent)).toEqual([
+      "1",
+      "2",
+      "",
+      "",
+      "5",
+      "",
+      "",
+      "",
+      "9",
+    ]);
+  });
+
   it("T-404: 誤りの数字にだけ下線が付く(色だけに頼らない。N-03)", () => {
     // idx 3 は誤り(解は 6)、idx 2 は正解の 4、idx 0 は手がかりの 5
     renderBoard(withValues(freshGame(), { 2: 4, 3: 1 }));

@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { redo, undo } from "@/lib/game/history";
+import { eraseCell, inputDigit } from "@/lib/game/input";
+import { toggleNote } from "@/lib/game/notes";
+import { createGame } from "@/lib/game/state";
 import { createEmptyStats } from "@/lib/game/stats";
 import type { GameState, SavedStats } from "@/lib/game/types";
 import {
@@ -1088,5 +1092,120 @@ describe("T-304: 読み込んだ値は、渡された値と配列を共有しな
     expect(parsed?.puzzle).not.toBe(source.puzzle);
     expect(parsed?.solution).not.toBe(source.solution);
     expect(parsed?.values).not.toBe(source.values);
+  });
+});
+
+describe("T-302: 整数の上限は安全な整数(2^53-1)まで", () => {
+  const MAX = Number.MAX_SAFE_INTEGER;
+  const OVER = 2 ** 53;
+
+  it("T-302: 前提: 上限を 1 超えた値も、JSON で同じ値のまま保存される", () => {
+    expect(JSON.parse(JSON.stringify(OVER))).toBe(OVER);
+    expect(Number.isInteger(OVER)).toBe(true);
+  });
+
+  it("T-302: 時間が上限ちょうどのゲームは読み込める", () => {
+    const game = { ...richPlayingGame(), elapsedSeconds: MAX };
+    storeGame(game);
+    expect(loadGame(localStorage)).toEqual(game);
+  });
+
+  it("T-302: 時間が上限を超えたゲームは null", () => {
+    storeGame({ ...richPlayingGame(), elapsedSeconds: OVER });
+    expect(loadGame(localStorage)).toBeNull();
+  });
+
+  it("T-302: クリア数・失敗数・ベストタイムが上限ちょうどの成績は読み込める", () => {
+    const stats: SavedStats = {
+      ...sampleStats(),
+      easy: { cleared: MAX, failed: MAX, bestSeconds: MAX },
+    };
+    storeStats(stats);
+    expect(loadStats(localStorage)).toEqual(stats);
+  });
+
+  it.each([
+    ["クリア数", { cleared: OVER, failed: 0, bestSeconds: 10 }],
+    ["失敗数", { cleared: 1, failed: OVER, bestSeconds: 10 }],
+    ["ベストタイム", { cleared: 1, failed: 0, bestSeconds: OVER }],
+  ])("T-302: %s が上限を超えた成績は、成績なし", (_, easy) => {
+    storeStats({ ...sampleStats(), easy });
+    expect(loadStats(localStorage)).toEqual(createEmptyStats());
+  });
+});
+
+describe("T-301: 実際の操作で作った状態も、保存して読み込むと同じに戻る", () => {
+  const blanks = UNIQUE_PUZZLE.flatMap((v, i) => (v === 0 ? [i] : []));
+
+  function roundTrip(state: GameState): GameState | null {
+    expect(saveGame(localStorage, state)).toBe(true);
+    return loadGame(localStorage);
+  }
+
+  // 乱数の元から決まる操作の列(本番の乱数の関数を使わない、テストだけの線形合同法)
+  function operations(seed: number): (state: GameState) => GameState {
+    let x = seed;
+    const next = (n: number) => {
+      x = (Math.imul(x, 1103515245) + 12345) >>> 0;
+      // 下位のビットは周期が短いので、上位のビットを使う
+      return (x >>> 16) % n;
+    };
+    return (state) => {
+      const index = blanks[next(blanks.length)]!;
+      const digit = next(9) + 1;
+      // 間違いが早く 3 回にならないよう、誤りの入力は 20 回に 1 回にする
+      const op = next(20);
+      if (op < 4) return inputDigit(state, index, UNIQUE_SOLUTION[index]!);
+      if (op < 5) return inputDigit(state, index, digit);
+      if (op < 9) return eraseCell(state, index);
+      if (op < 14) return toggleNote(state, index, digit);
+      if (op < 17) return undo(state);
+      return redo(state);
+    };
+  }
+
+  it.each([1, 2, 3, 4, 5])(
+    "T-301: 乱数の元 %i の操作の列で、各操作の後の状態",
+    (seed) => {
+      const step = operations(seed);
+      let state = createGame("normal", UNIQUE_PUZZLE, UNIQUE_SOLUTION);
+      const seen = new Set<string>();
+      for (let n = 0; n < 200; n++) {
+        state = { ...step(state), elapsedSeconds: n };
+        if (state.notes.some((notes) => notes.length > 0)) seen.add("notes");
+        if (state.undoStack.length > 0) seen.add("undo");
+        if (state.redoStack.length > 0) seen.add("redo");
+        if (state.mistakes > 0) seen.add("mistakes");
+        expect(roundTrip(state)).toEqual(state);
+      }
+      // 操作の列が、メモ・元に戻す・やり直し・間違いを含む状態を作ったこと
+      expect([...seen].sort()).toEqual(["mistakes", "notes", "redo", "undo"]);
+    },
+  );
+
+  it("T-301: 間違いを 3 回入れて失敗したゲーム", () => {
+    let state = createGame("hard", UNIQUE_PUZZLE, UNIQUE_SOLUTION);
+    state = toggleNote(state, blanks[3]!, 7);
+    for (const index of blanks.slice(0, 3)) {
+      const wrong = (UNIQUE_SOLUTION[index]! % 9) + 1;
+      state = inputDigit(state, index, wrong);
+    }
+    expect(state.status).toBe("failed");
+    expect(roundTrip(state)).toEqual(state);
+  });
+
+  it("T-301: 間違いと元に戻すを挟んで、全部正解にしてクリアしたゲーム", () => {
+    let state = createGame("easy", UNIQUE_PUZZLE, UNIQUE_SOLUTION);
+    const first = blanks[0]!;
+    state = inputDigit(state, first, (UNIQUE_SOLUTION[first]! % 9) + 1);
+    state = eraseCell(state, first);
+    state = toggleNote(state, first, 1);
+    state = undo(state);
+    for (const index of blanks) {
+      state = inputDigit(state, index, UNIQUE_SOLUTION[index]!);
+    }
+    expect(state.status).toBe("cleared");
+    expect(state.mistakes).toBe(1);
+    expect(roundTrip(state)).toEqual(state);
   });
 });

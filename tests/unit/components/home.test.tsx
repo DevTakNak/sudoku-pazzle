@@ -286,6 +286,31 @@ describe("T-403: 問題を作っている間と、作れなかったとき", () 
     }
   });
 
+  it("T-403: 作っている間も「成績」のリンクは押せて、/stats を指す", async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole("button", { name: "かんたん" }));
+    expect(screen.getByRole("status")).toHaveTextContent("問題を作っています…");
+
+    const link = screen.getByRole("link", { name: "成績" });
+    expect(link).toHaveAttribute("href", "/stats");
+    expect(link).not.toHaveAttribute("aria-disabled");
+  });
+
+  it("T-403: 作っている間にホームの画面を離れると、作っている問題を捨てる", async () => {
+    const user = userEvent.setup();
+    const { removeScreen } = renderScreen(<HomeScreen />);
+    await user.click(screen.getByRole("button", { name: "かんたん" }));
+    expect(workers).toHaveLength(1);
+
+    removeScreen();
+    expect(workers[0]!.terminated).toBe(true);
+
+    // 離れた後に応答が届いても、ゲームを保存せず、/play へ移らない
+    workers[0]!.respondOk("easy", UNIQUE_PUZZLE, UNIQUE_SOLUTION);
+    expect(savedGame()).toBeNull();
+    expect(router.push).not.toHaveBeenCalled();
+  });
+
   it("T-403: 作っている間に難易度のボタンを押しても、要求を重ねて送らない", async () => {
     const { user } = setup();
     await user.click(screen.getByRole("button", { name: "かんたん" }));

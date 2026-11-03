@@ -185,7 +185,7 @@ function parseDifficultyStats(value: unknown): DifficultyStats | null {
   return { cleared, failed, bestSeconds };
 }
 
-export function parseStats(value: unknown): SavedStats | null {
+function parseStats(value: unknown): SavedStats | null {
   if (!isRecord(value)) return null;
   const stats = createEmptyStats();
   for (const d of DIFFICULTIES) {

@@ -10,7 +10,8 @@ import { boxOf, CELL_COUNT, colOf, PEERS, rowOf } from "@/lib/sudoku/grid";
 type CellKind = "clue" | "correct" | "wrong" | "empty";
 type CellHighlight = "selected" | "error" | "same-digit" | "related" | "none";
 
-const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+// 1〜9(メモの並びと、ゲーム画面の数字のボタンで使う)
+export const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
 function kindOf(game: GameState, index: number): CellKind {
   const value = game.values[index]!;
