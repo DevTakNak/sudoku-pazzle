@@ -70,6 +70,12 @@ jobs:
             echo "::error::タグ ${TAG} は main の履歴に入っていません"
             exit 1
           fi
+          # タグの版と、そのコミットの package.json の version が同じかを確かめる
+          version=$(git show "refs/tags/${TAG}:package.json" | jq -r .version)
+          if [ "v${version}" != "$TAG" ]; then
+            echo "::error::タグ ${TAG} のコミットの package.json の version が ${version} です"
+            exit 1
+          fi
           # 承認を待つ間にタグを動かされても、ここで確かめたコミットをテストしてデプロイする
           echo "sha=$(git rev-parse "refs/tags/${TAG}^{commit}")" >> "$GITHUB_OUTPUT"
 
