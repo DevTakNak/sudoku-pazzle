@@ -71,7 +71,7 @@ flowchart LR
   - [x] 全体の整形(`npm run format`)だけのコミットを作り、ハッシュを `.git-blame-ignore-revs` に書く(`eslint-prettier.md`。雛形と shadcn/ui の生成物の 5 ファイル)(2026-11-03。コミット f4fd5b8。`git config blame.ignoreRevsFile` は `/sandbox` で `.git/config` に書けず、ユーザが自分のターミナルで設定した)
 - [x] Husky と lint-staged を入れる(`husky-lint-staged.md`)(2026-11-03。`husky` 9.1.7、`lint-staged` 17.6.0。`.husky/pre-commit` は `npx lint-staged`。`husky init` は `/sandbox` で `core.hooksPath` を書けず、ユーザが自分のターミナルで `npx husky` を実行した)
 - [x] `typecheck`、`test`、`format`、`format:check` の npm スクリプトを置く(2026-11-03。`test:coverage` も置いた)
-- [ ] lint、型チェック、テスト、ビルドが通ることを確かめてコミットする
+- [x] lint、型チェック、テスト、ビルドが通ることを確かめてコミットする(2026-11-03。lint、型チェック、`format:check`、ビルド(`.next/standalone/server.js` ができる)が通った。テストのファイルはまだ無く `npm test` は「No test files found」で終了コード 1 になるが、`--passWithNoTests` は付けないとユーザが決めた(テストが拾われなくなったときに気づけるように)。テストの設定は一時的なテストで確かめた。pre-commit は、`any` を入れた使い捨てのファイルでコミットが止まることを確かめた)
 
 ### 振り返り
 
