@@ -10,6 +10,7 @@ import type {
   HistoryEntry,
   SavedStats,
 } from "@/lib/game/types";
+import { isIntInRange, isRecord } from "@/lib/guards";
 import {
   CELL_COUNT,
   DIFFICULTIES,
@@ -30,23 +31,6 @@ export function getBrowserStorage(): Storage | null {
   } catch {
     return null;
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isIntInRange(
-  value: unknown,
-  min: number,
-  max: number,
-): value is number {
-  return (
-    typeof value === "number" &&
-    Number.isInteger(value) &&
-    value >= min &&
-    value <= max
-  );
 }
 
 // 0 以上の安全な整数(2^53-1 まで)

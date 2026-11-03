@@ -3,7 +3,7 @@
 // 問題の生成を Web Worker に頼むフック(G-01、G-03、G-04、N-02)
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { DEFAULT_TIME_LIMIT_MS } from "@/lib/sudoku/generator";
+import { DEFAULT_TIME_LIMIT_MS } from "@/lib/sudoku/limits";
 import type {
   GenerateRequest,
   GenerateResponse,

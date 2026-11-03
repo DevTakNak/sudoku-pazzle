@@ -13,7 +13,10 @@ import {
   useGameStore,
 } from "@/components/game-provider";
 import type { GameState, SavedStats } from "@/lib/game/types";
-import type { GenerateRequest } from "@/lib/sudoku/generator-messages";
+import type {
+  GenerateRequest,
+  GenerateResponse,
+} from "@/lib/sudoku/generator-messages";
 import { GAME_KEY, STATS_KEY } from "@/lib/storage/storage";
 import type { Difficulty, Grid } from "@/lib/sudoku/grid";
 
@@ -98,15 +101,34 @@ export function isStorePaused(): boolean {
 // ---- Web Worker の偽物(jsdom に Worker は無い) ----
 
 export class FakeWorker extends EventTarget {
+  readonly url: string;
+  readonly options: WorkerOptions | undefined;
   readonly messages: GenerateRequest[] = [];
-  terminated = false;
+  terminateCount = 0;
+
+  constructor(url: string | URL = "", options?: WorkerOptions) {
+    super();
+    this.url = String(url);
+    this.options = options;
+  }
+
+  get terminated(): boolean {
+    return this.terminateCount > 0;
+  }
 
   postMessage(data: GenerateRequest): void {
     this.messages.push(data);
   }
 
   terminate(): void {
-    this.terminated = true;
+    this.terminateCount += 1;
+  }
+
+  // 任意の応答を、画面の側に届ける
+  respond(data: GenerateResponse): void {
+    act(() => {
+      this.dispatchEvent(new MessageEvent("message", { data }));
+    });
   }
 
   // 最後に送られた要求の番号に合わせて、成功の応答を返す
@@ -156,8 +178,8 @@ export class FakeWorker extends EventTarget {
 export function installFakeWorker(): FakeWorker[] {
   const instances: FakeWorker[] = [];
   class InstalledWorker extends FakeWorker {
-    constructor() {
-      super();
+    constructor(url: string | URL, options?: WorkerOptions) {
+      super(url, options);
       instances.push(this);
     }
   }

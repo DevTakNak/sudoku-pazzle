@@ -3,10 +3,11 @@
 import { CLUE_RANGES, analyzePuzzle, difficultyOf } from "./difficulty";
 import { CELL_COUNT, DIFFICULTIES, PEERS } from "./grid";
 import type { Difficulty, Grid } from "./grid";
+import { DEFAULT_TIME_LIMIT_MS } from "./limits";
 import { createRandom, shuffle } from "./random";
 import type { Random } from "./random";
 
-export interface GenerateOptions {
+interface GenerateOptions {
   // この時間(ミリ秒)を過ぎたら失敗を返す
   timeLimitMs?: number;
   // 経過時間を測る時計(ミリ秒)
@@ -16,8 +17,6 @@ export interface GenerateOptions {
 export type GenerateResult =
   | { ok: true; difficulty: Difficulty; puzzle: Grid; solution: Grid }
   | { ok: false; reason: "timeout" };
-
-export const DEFAULT_TIME_LIMIT_MS = 10_000;
 
 // 目標の数まで抜いた後に試す、手がかりの入れ替えの回数の上限
 const SWAP_LIMIT = 1000;

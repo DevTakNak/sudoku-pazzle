@@ -50,7 +50,22 @@ async function expectInsideViewport(
   expect(box!.x + box!.width).toBeLessThanOrEqual(width);
 }
 
-test.describe("T-505: 幅 320px で横にはみ出さない", () => {
+// 見えているボタンとリンク(盤面のマスはボタンでもリンクでもない)が、44px 四方以上か(画面仕様書の「共通」)
+async function expectTapTargets(page: Page): Promise<void> {
+  const targets = page.locator("button:visible, a:visible");
+  const count = await targets.count();
+  expect(count).toBeGreaterThan(0);
+  for (let i = 0; i < count; i++) {
+    const target = targets.nth(i);
+    const label = (await target.textContent())?.trim() ?? "";
+    const box = await target.boundingBox();
+    expect(box, label).not.toBeNull();
+    expect(box!.width, `${label} の幅`).toBeGreaterThanOrEqual(44);
+    expect(box!.height, `${label} の高さ`).toBeGreaterThanOrEqual(44);
+  }
+}
+
+test.describe("T-505: 幅 320px で横にはみ出さず、押す部分は 44px 四方以上", () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: NARROW, height: 640 });
   });
@@ -61,14 +76,19 @@ test.describe("T-505: 幅 320px で横にはみ出さない", () => {
     await seed(page, playingGame());
     await page.goto("/");
     await expect(
-      page.getByRole("button", { name: "続きから(むずかしい・1:23:45)" }),
+      page.getByRole("button", {
+        name: "続きから(むずかしい・1:23:45)",
+        exact: true,
+      }),
     ).toBeVisible();
     await expectNoHorizontalOverflow(page, NARROW);
+    await expectTapTargets(page);
 
     await page.getByRole("button", { name: "かんたん", exact: true }).click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toContainText("新しいゲームを始めますか?");
     await expectNoHorizontalOverflow(page, NARROW);
+    await expectTapTargets(page);
     await expectInsideViewport(dialog, NARROW);
   });
 
@@ -79,6 +99,7 @@ test.describe("T-505: 幅 320px で横にはみ出さない", () => {
       page.getByRole("button", { name: "むずかしい", exact: true }),
     ).toBeVisible();
     await expectNoHorizontalOverflow(page, NARROW);
+    await expectTapTargets(page);
   });
 
   test("T-505: 成績", async ({ page }) => {
@@ -87,8 +108,11 @@ test.describe("T-505: 幅 320px で横にはみ出さない", () => {
     await expect(
       page.getByRole("rowheader", { name: "むずかしい", exact: true }),
     ).toBeVisible();
-    await expect(page.getByRole("cell", { name: "10:00:00" })).toBeVisible();
+    await expect(
+      page.getByRole("cell", { name: "10:00:00", exact: true }),
+    ).toBeVisible();
     await expectNoHorizontalOverflow(page, NARROW);
+    await expectTapTargets(page);
   });
 
   test("T-505: ゲーム(一時停止中と、再開後)", async ({ page }) => {
@@ -96,7 +120,8 @@ test.describe("T-505: 幅 320px で横にはみ出さない", () => {
     await page.goto("/play");
     await expect(page.getByText("一時停止中", { exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page, NARROW);
-    const grid = page.getByRole("grid", { name: "数独の盤面" });
+    await expectTapTargets(page);
+    const grid = page.getByRole("grid", { name: "数独の盤面", exact: true });
     await expectInsideViewport(grid, NARROW);
 
     await page
@@ -106,6 +131,7 @@ test.describe("T-505: 幅 320px で横にはみ出さない", () => {
       .click();
     await expect(page.getByText("一時停止中", { exact: true })).toHaveCount(0);
     await expectNoHorizontalOverflow(page, NARROW);
+    await expectTapTargets(page);
     await expectInsideViewport(grid, NARROW);
   });
 
@@ -115,6 +141,7 @@ test.describe("T-505: 幅 320px で横にはみ出さない", () => {
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toContainText("失敗しました");
     await expectNoHorizontalOverflow(page, NARROW);
+    await expectTapTargets(page);
     await expectInsideViewport(dialog, NARROW);
   });
 
@@ -124,6 +151,7 @@ test.describe("T-505: 幅 320px で横にはみ出さない", () => {
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toContainText("クリア!");
     await expectNoHorizontalOverflow(page, NARROW);
+    await expectTapTargets(page);
     await expectInsideViewport(dialog, NARROW);
   });
 });
@@ -134,7 +162,9 @@ test("T-505: 数字のボタンが、幅 320px で 5 列と 4 列、480px で 9 
   await seed(page, playingGame());
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/play");
-  await expect(page.getByRole("grid", { name: "数独の盤面" })).toBeVisible();
+  await expect(
+    page.getByRole("grid", { name: "数独の盤面", exact: true }),
+  ).toBeVisible();
 
   // 9 つのボタンの位置を、行(y)ごとにまとめ、行ごとの個数を返す
   async function rowsOfDigitButtons(): Promise<{

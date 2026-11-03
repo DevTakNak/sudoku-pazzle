@@ -181,7 +181,9 @@ export async function startNewGame(
 ): Promise<void> {
   await page.getByRole("button", { name: difficulty, exact: true }).click();
   await expect(page).toHaveURL(/\/play$/, { timeout: timeoutMs });
-  await expect(page.getByRole("grid", { name: "数独の盤面" })).toBeVisible();
+  await expect(
+    page.getByRole("grid", { name: "数独の盤面", exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole("gridcell")).toHaveCount(81);
 }
 

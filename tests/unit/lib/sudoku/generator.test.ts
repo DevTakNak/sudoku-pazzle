@@ -3,12 +3,14 @@ import { describe, expect, it } from "vitest";
 import { CLUE_RANGES, rateByTechniques } from "@/lib/sudoku/difficulty";
 import { generatePuzzle } from "@/lib/sudoku/generator";
 import type { Difficulty } from "@/lib/sudoku/grid";
+import { DEFAULT_TIME_LIMIT_MS } from "@/lib/sudoku/limits";
 import { countSolutions } from "@/lib/sudoku/solver";
 
 import { gridToString, isSolvedGrid } from "../../../helpers/grid";
 
 const DIFFICULTIES: Difficulty[] = ["easy", "normal", "hard"];
-const SEEDS = [1, 2, 3];
+// 4 は、入れ替え(G-17)で戻し損ねると手がかりが範囲を超える乱数の元(むずかしい)。壊して確かめて見つけた
+const SEEDS = [1, 2, 3, 4];
 // 生成は時間がかかるので、Vitest の既定(5 秒)より長く待つ
 const SLOW = { timeout: 120_000 };
 
@@ -65,6 +67,25 @@ describe("generatePuzzle", () => {
     }
   });
 
+  describe("T-001: 手がかりの数の目標は、範囲の下限から上限まで", () => {
+    it(
+      "T-001: easy を 200 の乱数の元で作ると、手がかりの数が 38〜45 のすべてになる",
+      SLOW,
+      () => {
+        const { min, max } = CLUE_RANGES.easy;
+        const clues = new Set<number>();
+        for (let seed = 1; seed <= 200; seed++) {
+          const result = generatePuzzle("easy", seed, { timeLimitMs: 60_000 });
+          if (!result.ok) throw new Error(`作れなかった: ${result.reason}`);
+          clues.add(result.puzzle.filter((v) => v !== 0).length);
+        }
+        expect([...clues].sort((a, b) => a - b)).toEqual(
+          Array.from({ length: max - min + 1 }, (_, k) => min + k),
+        );
+      },
+    );
+  });
+
   describe("T-002: 乱数の元", () => {
     it("T-002: 同じ乱数の元なら同じ問題と解になる", SLOW, () => {
       const a = generatePuzzle("normal", 42, { timeLimitMs: 60_000 });
@@ -106,6 +127,42 @@ describe("generatePuzzle", () => {
         now: () => 0,
       });
       expect(result.ok).toBe(true);
+    });
+
+    it("T-003: 時計がちょうど上限の値なら失敗を返す", () => {
+      // 1 回目(上限を決める)は 0、その後はずっと 5000(ちょうど上限)
+      let calls = 0;
+      const now = () => (calls++ === 0 ? 0 : 5000);
+      const result = generatePuzzle("easy", 1, { timeLimitMs: 5000, now });
+      expect(result).toEqual({ ok: false, reason: "timeout" });
+    });
+
+    it("T-003: 時間切れでない例外は、失敗にせず投げ直す", () => {
+      // 1 回目(上限を決める)は返し、作っている途中の呼び出しで例外を出す時計
+      let calls = 0;
+      const now = () => {
+        if (calls++ === 0) return 0;
+        throw new Error("時計が壊れた");
+      };
+      expect(() =>
+        generatePuzzle("easy", 1, { timeLimitMs: 5000, now }),
+      ).toThrow("時計が壊れた");
+    });
+  });
+
+  describe("T-003: 既定の時間の上限", () => {
+    it("T-003: 既定の時間の上限は 10 秒(G-03)", () => {
+      expect(DEFAULT_TIME_LIMIT_MS).toBe(10_000);
+    });
+
+    it("T-003: 時間の上限を指定しないときは、既定の上限で打ち切る", () => {
+      // 1 回目は 0、その後は既定の上限ちょうど
+      let calls = 0;
+      const now = () => (calls++ === 0 ? 0 : DEFAULT_TIME_LIMIT_MS);
+      expect(generatePuzzle("easy", 1, { now })).toEqual({
+        ok: false,
+        reason: "timeout",
+      });
     });
   });
 });

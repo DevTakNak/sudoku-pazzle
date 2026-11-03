@@ -175,7 +175,7 @@ test.describe("T-507: 保存の値が無い・壊れているとき", () => {
     await page.goto("/play");
     await expect(page).toHaveURL("/");
     await expect(
-      page.getByRole("heading", { name: "数独パズル" }),
+      page.getByRole("heading", { name: "数独パズル", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "かんたん", exact: true }),
@@ -219,7 +219,7 @@ test.describe("T-507: 保存の値が無い・壊れているとき", () => {
       // ホーム: 続きは出ず、新しいゲームを始められる
       await page.goto("/");
       await expect(
-        page.getByRole("heading", { name: "数独パズル" }),
+        page.getByRole("heading", { name: "数独パズル", exact: true }),
       ).toBeVisible();
       await expect(
         page.getByRole("button", { name: "かんたん", exact: true }),
@@ -279,7 +279,7 @@ test.describe("T-509: localStorage を参照すると例外が出るブラウザ
 
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { name: "数独パズル" }),
+      page.getByRole("heading", { name: "数独パズル", exact: true }),
     ).toBeVisible();
     await expect(notice).toBeVisible();
 
@@ -351,7 +351,9 @@ test.describe("T-509: localStorage を参照すると例外が出るブラウザ
     page,
   }) => {
     await page.goto("/stats");
-    await expect(page.getByRole("heading", { name: "成績" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "成績", exact: true }),
+    ).toBeVisible();
     await expect(page.getByText(SAVE_NOTICE)).toBeVisible();
     await expectStatsRow(page, "かんたん", ["0", "0", "-", "-"]);
 

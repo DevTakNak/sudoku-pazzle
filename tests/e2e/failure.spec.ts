@@ -68,7 +68,7 @@ test("T-502: 間違いを 3 回入れて失敗し、「やり直す」で同じ�
     .click();
   await expect(page).toHaveURL("/");
   await expect(
-    page.getByRole("heading", { name: "新しいゲーム" }),
+    page.getByRole("heading", { name: "新しいゲーム", exact: true }),
   ).toBeVisible();
   // 失敗したゲームは「続きから」に出ない
   await expect(page.getByRole("button", { name: /^続きから/ })).toHaveCount(0);

@@ -1,5 +1,7 @@
 // 画面と Web Worker の間でやり取りするメッセージ(G-01、G-02、G-04)
 
+import { isIntInRange, isRecord } from "@/lib/guards";
+
 import { generatePuzzle } from "./generator";
 import type { GenerateResult } from "./generator";
 import { isDifficulty } from "./grid";
@@ -11,7 +13,7 @@ export interface GenerateRequest {
   seed: number; // 0〜2^32-1 の整数
 }
 
-export type GenerateFailureReason = "timeout" | "invalid-request" | "error";
+type GenerateFailureReason = "timeout" | "invalid-request" | "error";
 
 export type GenerateResponse =
   | {
@@ -26,22 +28,17 @@ export type GenerateResponse =
 const MAX_SEED = 0xffffffff;
 
 function isRequestId(value: unknown): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+  return isIntInRange(value, 0, Number.POSITIVE_INFINITY);
 }
 
 function isSeed(value: unknown): value is number {
-  return (
-    typeof value === "number" &&
-    Number.isInteger(value) &&
-    value >= 0 &&
-    value <= MAX_SEED
-  );
+  return isIntInRange(value, 0, MAX_SEED);
 }
 
 // Worker が受け取った値を確かめる。形が違えば null
 export function parseGenerateRequest(data: unknown): GenerateRequest | null {
-  if (typeof data !== "object" || data === null) return null;
-  const { requestId, difficulty, seed } = data as Record<string, unknown>;
+  if (!isRecord(data)) return null;
+  const { requestId, difficulty, seed } = data;
   if (!isRequestId(requestId) || !isDifficulty(difficulty) || !isSeed(seed)) {
     return null;
   }
@@ -58,10 +55,7 @@ export function handleGenerateMessage(
 ): GenerateResponse {
   const request = parseGenerateRequest(data);
   if (request === null) {
-    const requestId =
-      typeof data === "object" && data !== null
-        ? (data as Record<string, unknown>).requestId
-        : undefined;
+    const requestId = isRecord(data) ? data.requestId : undefined;
     return {
       requestId: isRequestId(requestId) ? requestId : null,
       ok: false,

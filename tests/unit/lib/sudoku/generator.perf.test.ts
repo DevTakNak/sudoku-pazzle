@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_TIME_LIMIT_MS, generatePuzzle } from "@/lib/sudoku/generator";
+import { generatePuzzle } from "@/lib/sudoku/generator";
+import { DEFAULT_TIME_LIMIT_MS } from "@/lib/sudoku/limits";
 
 describe("generatePuzzle の時間", () => {
   it(

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// 問題の生成のフック。Worker は FakeWorker に差し替える(jsdom に Worker は無い)
+// 問題の生成のフック。Worker は偽物(tests/helpers/screen.tsx の FakeWorker)に差し替える(jsdom に Worker は無い)
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -8,49 +8,14 @@ import {
   usePuzzleGenerator,
 } from "@/components/use-puzzle-generator";
 import type { GeneratedPuzzle } from "@/components/use-puzzle-generator";
-import { DEFAULT_TIME_LIMIT_MS } from "@/lib/sudoku/generator";
+import { DEFAULT_TIME_LIMIT_MS } from "@/lib/sudoku/limits";
 import type { GenerateResponse } from "@/lib/sudoku/generator-messages";
 
 import { UNIQUE_PUZZLE, UNIQUE_SOLUTION } from "../../helpers/grid";
+import { installFakeWorker } from "../../helpers/screen";
+import type { FakeWorker } from "../../helpers/screen";
 
-// ---- 偽の Worker ----
-
-class FakeWorker extends EventTarget {
-  static instances: FakeWorker[] = [];
-
-  readonly url: string;
-  readonly options: WorkerOptions | undefined;
-  readonly posted: unknown[] = [];
-  terminateCount = 0;
-
-  constructor(url: string | URL, options?: WorkerOptions) {
-    super();
-    this.url = String(url);
-    this.options = options;
-    FakeWorker.instances.push(this);
-  }
-
-  postMessage(message: unknown): void {
-    this.posted.push(message);
-  }
-
-  terminate(): void {
-    this.terminateCount += 1;
-  }
-
-  // Worker からの応答を、画面の側に届ける
-  respond(data: GenerateResponse): void {
-    act(() => {
-      this.dispatchEvent(new MessageEvent("message", { data }));
-    });
-  }
-
-  fail(): void {
-    act(() => {
-      this.dispatchEvent(new Event("error"));
-    });
-  }
-}
+let workers: FakeWorker[] = [];
 
 function okResponse(requestId: number): GenerateResponse {
   return {
@@ -76,7 +41,7 @@ function setup() {
 }
 
 function worker(index = 0): FakeWorker {
-  const w = FakeWorker.instances[index];
+  const w = workers[index];
   if (w === undefined) throw new Error(`Worker ${index} が作られていない`);
   return w;
 }
@@ -93,8 +58,7 @@ function fixSeed(...seeds: number[]) {
 }
 
 beforeEach(() => {
-  FakeWorker.instances = [];
-  vi.stubGlobal("Worker", FakeWorker);
+  workers = installFakeWorker();
 });
 
 afterEach(() => {
@@ -106,17 +70,13 @@ describe("T-416: 前提", () => {
   it("T-416: 待ち時間の上限は DEFAULT_TIME_LIMIT_MS + 5 秒", () => {
     expect(RESPONSE_TIMEOUT_MS).toBe(DEFAULT_TIME_LIMIT_MS + 5_000);
   });
-
-  it("T-416: jsdom に本物の Worker は無い(FakeWorker に差し替えている)", () => {
-    expect(Worker).toBe(FakeWorker);
-  });
 });
 
 describe("T-416: 要求の送り方(G-04)", () => {
   it("T-416: generate の前は idle で、Worker を作らない", () => {
     const { result } = setup();
     expect(result.current.status).toBe("idle");
-    expect(FakeWorker.instances).toHaveLength(0);
+    expect(workers).toHaveLength(0);
   });
 
   it("T-416: generate で generating になり、module の Worker を作って、{ requestId: 0, difficulty, seed } を 1 度だけ送る", () => {
@@ -126,10 +86,10 @@ describe("T-416: 要求の送り方(G-04)", () => {
     act(() => result.current.generate("normal"));
 
     expect(result.current.status).toBe("generating");
-    expect(FakeWorker.instances).toHaveLength(1);
+    expect(workers).toHaveLength(1);
     expect(worker().url).toContain("generator.worker");
     expect(worker().options).toEqual({ type: "module" });
-    expect(worker().posted).toEqual([
+    expect(worker().messages).toEqual([
       { requestId: 0, difficulty: "normal", seed: 123456 },
     ]);
   });
@@ -139,8 +99,8 @@ describe("T-416: 要求の送り方(G-04)", () => {
     (difficulty) => {
       const { result } = setup();
       act(() => result.current.generate(difficulty));
-      expect(worker().posted).toHaveLength(1);
-      expect(worker().posted[0]).toMatchObject({ difficulty });
+      expect(worker().messages).toHaveLength(1);
+      expect(worker().messages[0]).toMatchObject({ difficulty });
     },
   );
 
@@ -155,7 +115,7 @@ describe("T-416: 要求の送り方(G-04)", () => {
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy.mock.calls[0]?.[0]).toBeInstanceOf(Uint32Array);
       expect(spy.mock.calls[0]?.[0]).toHaveLength(1);
-      expect(worker().posted).toEqual([
+      expect(worker().messages).toEqual([
         { requestId: 0, difficulty: "easy", seed },
       ]);
     },
@@ -165,7 +125,7 @@ describe("T-416: 要求の送り方(G-04)", () => {
     const { result } = setup();
     act(() => result.current.generate("easy"));
 
-    const seed = (worker().posted[0] as { seed: number }).seed;
+    const seed = (worker().messages[0] as { seed: number }).seed;
     expect(Number.isInteger(seed)).toBe(true);
     expect(seed).toBeGreaterThanOrEqual(0);
     expect(seed).toBeLessThanOrEqual(4_294_967_295);
@@ -181,8 +141,8 @@ describe("T-416: 要求の送り方(G-04)", () => {
     worker().respond(okResponse(1));
     act(() => result.current.generate("hard"));
 
-    expect(FakeWorker.instances).toHaveLength(1);
-    expect(worker().posted).toEqual([
+    expect(workers).toHaveLength(1);
+    expect(worker().messages).toEqual([
       { requestId: 0, difficulty: "easy", seed: 10 },
       { requestId: 1, difficulty: "normal", seed: 20 },
       { requestId: 2, difficulty: "hard", seed: 30 },
@@ -196,14 +156,14 @@ describe("T-416: 要求の送り方(G-04)", () => {
     act(() => result.current.generate("hard"));
     act(() => result.current.generate("normal"));
 
-    expect(worker().posted).toHaveLength(1);
-    expect(FakeWorker.instances).toHaveLength(1);
+    expect(worker().messages).toHaveLength(1);
+    expect(workers).toHaveLength(1);
     expect(result.current.status).toBe("generating");
 
     worker().respond(okResponse(0));
     act(() => result.current.generate("normal"));
-    expect(worker().posted).toHaveLength(2);
-    expect(worker().posted[1]).toMatchObject({ requestId: 1 });
+    expect(worker().messages).toHaveLength(2);
+    expect(worker().messages[1]).toMatchObject({ requestId: 1 });
   });
 });
 
@@ -248,9 +208,9 @@ describe("T-416: 応答の受け取り", () => {
     act(() => result.current.dismiss());
     act(() => result.current.generate("hard"));
 
-    expect(FakeWorker.instances).toHaveLength(1);
-    expect(worker().posted).toHaveLength(2);
-    expect(worker().posted[1]).toMatchObject({ requestId: 1 });
+    expect(workers).toHaveLength(1);
+    expect(worker().messages).toHaveLength(2);
+    expect(worker().messages[1]).toMatchObject({ requestId: 1 });
     expect(result.current.status).toBe("generating");
   });
 
@@ -263,7 +223,7 @@ describe("T-416: 応答の受け取り", () => {
     act(() => result.current.generate("hard"));
 
     expect(result.current.status).toBe("generating");
-    expect(worker().posted).toHaveLength(2);
+    expect(worker().messages).toHaveLength(2);
   });
 
   it("T-416: 違う番号の成功の応答は捨てる(onGenerated を呼ばず、generating のまま)。合う番号が来れば受け取る", () => {
@@ -343,7 +303,7 @@ describe("T-416: Worker の error イベント(G-03)", () => {
     const { result, onGenerated } = setup();
     act(() => result.current.generate("hard"));
 
-    worker().fail();
+    worker().emitError();
 
     expect(result.current.status).toBe("failed");
     expect(worker().terminateCount).toBe(1);
@@ -354,13 +314,13 @@ describe("T-416: Worker の error イベント(G-03)", () => {
     fixSeed(1, 2);
     const { result } = setup();
     act(() => result.current.generate("hard"));
-    worker(0).fail();
+    worker(0).emitError();
 
     act(() => result.current.generate("hard"));
 
-    expect(FakeWorker.instances).toHaveLength(2);
-    expect(worker(0).posted).toHaveLength(1);
-    expect(worker(1).posted).toEqual([
+    expect(workers).toHaveLength(2);
+    expect(worker(0).messages).toHaveLength(1);
+    expect(worker(1).messages).toEqual([
       { requestId: 1, difficulty: "hard", seed: 2 },
     ]);
     expect(worker(1).terminateCount).toBe(0);
@@ -370,7 +330,7 @@ describe("T-416: Worker の error イベント(G-03)", () => {
   it("T-416: 新しい Worker の応答を受け取れる。古い Worker の遅い応答は捨てる", () => {
     const { result, onGenerated } = setup();
     act(() => result.current.generate("hard"));
-    worker(0).fail();
+    worker(0).emitError();
     act(() => result.current.generate("hard"));
 
     // 古い Worker が(止める前に)返した、今の番号と同じ 1 の応答
@@ -387,7 +347,7 @@ describe("T-416: Worker の error イベント(G-03)", () => {
     vi.useFakeTimers();
     const { result } = setup();
     act(() => result.current.generate("hard"));
-    worker().fail();
+    worker().emitError();
 
     act(() => {
       vi.advanceTimersByTime(RESPONSE_TIMEOUT_MS * 2);
@@ -428,10 +388,10 @@ describe("T-416: 待ち時間の上限(G-03)", () => {
     act(() => result.current.dismiss());
     act(() => result.current.generate("hard"));
 
-    expect(FakeWorker.instances).toHaveLength(2);
-    expect(worker(1).posted).toHaveLength(1);
-    expect(worker(1).posted[0]).toMatchObject({ requestId: 1 });
-    expect(worker(0).posted).toHaveLength(1);
+    expect(workers).toHaveLength(2);
+    expect(worker(1).messages).toHaveLength(1);
+    expect(worker(1).messages[0]).toMatchObject({ requestId: 1 });
+    expect(worker(0).messages).toHaveLength(1);
   });
 
   it("T-416: 上限の前に成功の応答が来ると、上限が過ぎても failed にならず、terminate もしない", () => {
@@ -570,13 +530,13 @@ describe("T-416: アンマウント", () => {
     const { unmount } = setup();
 
     expect(() => unmount()).not.toThrow();
-    expect(FakeWorker.instances).toHaveLength(0);
+    expect(workers).toHaveLength(0);
   });
 
   it("T-416: error で止めて捨てた Worker は、アンマウントで重ねて terminate しない", () => {
     const { result, unmount } = setup();
     act(() => result.current.generate("hard"));
-    worker().fail();
+    worker().emitError();
 
     unmount();
 
@@ -623,11 +583,11 @@ describe("T-416: 待っていない応答・捨てた Worker・コールバッ�
   it("T-416: error で捨てた Worker が、作り直した後にまた error を出しても、今の要求は失敗にならない", () => {
     const { result } = setup();
     act(() => result.current.generate("easy"));
-    worker(0).fail();
+    worker(0).emitError();
     act(() => result.current.generate("easy"));
     expect(result.current.status).toBe("generating");
 
-    worker(0).fail();
+    worker(0).emitError();
     expect(result.current.status).toBe("generating");
     expect(worker(1).terminateCount).toBe(0);
   });
@@ -656,13 +616,13 @@ describe("T-416: 待っていないときの error、Worker を起動できな�
     worker(0).respond(okResponse(0));
     expect(result.current.status).toBe("idle");
 
-    worker(0).fail();
+    worker(0).emitError();
 
     expect(result.current.status).toBe("idle");
     expect(worker(0).terminateCount).toBe(1);
     act(() => result.current.generate("easy"));
-    expect(FakeWorker.instances).toHaveLength(2);
-    expect(worker(1).posted).toHaveLength(1);
+    expect(workers).toHaveLength(2);
+    expect(worker(1).messages).toHaveLength(1);
     expect(onGenerated).toHaveBeenCalledTimes(1);
   });
 
@@ -680,11 +640,11 @@ describe("T-416: 待っていないときの error、Worker を起動できな�
     expect(() => act(() => result.current.generate("easy"))).not.toThrow();
     expect(result.current.status).toBe("failed");
 
-    vi.stubGlobal("Worker", FakeWorker);
+    workers = installFakeWorker();
     act(() => result.current.dismiss());
     act(() => result.current.generate("easy"));
     expect(result.current.status).toBe("generating");
-    expect(worker(0).posted).toHaveLength(1);
+    expect(worker(0).messages).toHaveLength(1);
   });
 
   it("T-416: 応答が読めない(messageerror)と失敗にし、Worker を止めて次の要求で作り直す", () => {
@@ -698,13 +658,13 @@ describe("T-416: 待っていないときの error、Worker を起動できな�
     expect(result.current.status).toBe("failed");
     expect(worker(0).terminateCount).toBe(1);
     act(() => result.current.generate("easy"));
-    expect(FakeWorker.instances).toHaveLength(2);
+    expect(workers).toHaveLength(2);
   });
 
   it("T-416: 捨てた Worker の messageerror は、今の要求を失敗にしない", () => {
     const { result } = setup();
     act(() => result.current.generate("easy"));
-    worker(0).fail();
+    worker(0).emitError();
     act(() => result.current.generate("easy"));
 
     act(() => {

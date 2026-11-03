@@ -1,5 +1,7 @@
 // 盤面の型と、行・列・ブロックの補助関数(src/lib/CLAUDE.md の「保存(localStorage)」の型)
 
+import { isIntInRange } from "@/lib/guards";
+
 // 易しい順
 export const DIFFICULTIES = ["easy", "normal", "hard"] as const;
 
@@ -69,9 +71,7 @@ export function isGridShape(value: unknown): value is Grid {
   return (
     Array.isArray(value) &&
     value.length === CELL_COUNT &&
-    (value as unknown[]).every(
-      (v) => typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 9,
-    )
+    (value as unknown[]).every((v) => isIntInRange(v, 0, 9))
   );
 }
 
