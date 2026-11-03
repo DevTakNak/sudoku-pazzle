@@ -138,7 +138,7 @@ API 仕様書と ER 図は、API と DB を使わないので作らない。
 `~/Development/Rules/tech/` の次のファイル。
 
 - `node.md`、`npm.md`、`typescript.md`
-- `nextjs.md`、`react.md`、`shadcn-tailwind.md`
+- `nextjs.md`、`react.md`、`web-browser.md`、`shadcn-tailwind.md`
 - `vitest.md`、`playwright.md`
 - `eslint-prettier.md`、`husky-lint-staged.md`
 - `vercel.md`
