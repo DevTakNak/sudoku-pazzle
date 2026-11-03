@@ -312,7 +312,7 @@ flowchart LR
 ## フェーズ 8: Makefile
 
 - [x] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う(2026-11-04。更新のチェックは前回の 2026-10-24 から 2 週間たっていないので行わなかった。このプロジェクトが参照する待ちの TODO は無かった。`/sandbox` は、囲いの中で `make dev`(Turbopack が `unable to start FSEvent stream` で止まった)、`make test-e2e`、`make init` の `npx playwright install` が動かないので、ユーザが、このフェーズの確認の間は無効にすると決めた)
-  - [ ] フェーズの終わりに `/sandbox` を有効に戻してもらう(自動許可のモードを選び直す)
+  - [x] フェーズの終わりに `/sandbox` を有効に戻してもらう(自動許可のモードを選び直す)(2026-11-04。フェーズ 8 のコミットの後に、ユーザが有効に戻した)
 - [x] `seed` のターゲットを省くかをユーザに確認する(DB を使わないため)(2026-11-04。ユーザが省くと決めた)
 - [x] 各ターゲット(`init`、`dev`、`build`、`deploy`、`test`)の中身を決め、作る前にユーザに確認する(2026-11-04。ユーザが決めた: `test` は lint・型チェック・Prettier の確認・単体テストにし、E2E は `test-e2e` に分ける。`deploy` はプレビュー、`deploy-prod` は本番に分ける。`init` は `npm ci` と `npx playwright install chromium`。README.md を作る)
 - [x] Makefile を作り、各ターゲットが動くことを確かめる。`deploy` は `make -n deploy` で確かめる(2026-11-04。全部のターゲットを確かめた。下の T-505 を直した後の `make test-e2e` は失敗 0)
