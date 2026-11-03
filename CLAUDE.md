@@ -97,6 +97,7 @@ sudoku-pazzle/
 │       └── storage/          localStorage の読み書き
 └── tests/
     ├── CLAUDE.md             テスト仕様書
+    ├── helpers/              テストの補助関数
     ├── unit/                 Vitest
     └── e2e/                  Playwright Test
 ```
