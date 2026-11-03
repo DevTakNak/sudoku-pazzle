@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 // ゲーム画面の一時停止とタイマー(T-408、T-409)、操作のボタン(T-410)
-import { act, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { GameProvider } from "@/components/game-provider";
+import { GameProvider, useGameSnapshot } from "@/components/game-provider";
 import { GameScreen } from "@/components/game-screen";
 import type { GameState } from "@/lib/game/types";
 import { GAME_KEY } from "@/lib/storage/storage";
@@ -599,4 +600,135 @@ describe("T-408: hydration の間", () => {
     act(() => root?.unmount());
     container.remove();
   });
+});
+
+describe("T-407: 一時停止中は Tab で盤面に入らない", () => {
+  it("T-407: 一時停止中に Tab を押していっても、盤面のマスにフォーカスが入らない(再開すると入る)", async () => {
+    const { user } = setup(richPlayingGame());
+    const focused: (string | null)[] = [];
+    for (let i = 0; i < 6; i++) {
+      await user.tab();
+      focused.push(document.activeElement?.getAttribute("role") ?? null);
+    }
+    expect(focused).not.toContain("gridcell");
+
+    await resume(user);
+    (document.activeElement as HTMLElement | null)?.blur();
+    const afterResume: (string | null)[] = [];
+    for (let i = 0; i < 6; i++) {
+      await user.tab();
+      afterResume.push(document.activeElement?.getAttribute("role") ?? null);
+    }
+    expect(afterResume).toContain("gridcell");
+  });
+});
+
+// ストアにゲームを始めさせてから、ゲーム画面を開く(ホームで問題を作り、/play に移るときと同じ順)
+function StartThenOpen({ show, strict }: { show: boolean; strict: boolean }) {
+  const tree = (
+    <GameProvider>
+      <StartGameControl game={freshGame("normal")} />
+      <PausedText />
+      {show && <GameScreen />}
+    </GameProvider>
+  );
+  return strict ? <StrictMode>{tree}</StrictMode> : tree;
+}
+
+function PausedText() {
+  const { paused } = useGameSnapshot();
+  return <span data-testid="paused">{paused ? "paused" : "running"}</span>;
+}
+
+async function startThenOpen(strict: boolean) {
+  const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  const view = render(<StartThenOpen show={false} strict={strict} />);
+  await user.click(screen.getByRole("button", { name: "テスト用ゲーム開始" }));
+  view.rerender(<StartThenOpen show strict={strict} />);
+  return { user, view };
+}
+
+describe("T-409: タブが隠れている間にゲームの画面を開く", () => {
+  it("T-409: 始めたゲームの画面を、タブが隠れている間に開くと、一時停止になりタイマーが進まない", async () => {
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+
+    await startThenOpen(false);
+
+    expect(screen.getByTestId("paused")).toHaveTextContent("paused");
+    expect(screen.getByText("一時停止中")).toBeInTheDocument();
+    advance(3000);
+    expect(timerText()).toBe("00:00");
+  });
+
+  it("T-409: タブが見えている間に開くと、一時停止にならずタイマーが進む", async () => {
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+
+    await startThenOpen(false);
+
+    expect(screen.getByTestId("paused")).toHaveTextContent("running");
+    advance(3000);
+    expect(timerText()).toBe("00:03");
+  });
+});
+
+describe("T-408: React の StrictMode(開発サーバー)でも同じに動く", () => {
+  it("T-408: StrictMode でも、始めたゲームの画面を開くと一時停止にならず、タイマーが進む", async () => {
+    await startThenOpen(true);
+
+    expect(screen.getByTestId("paused")).toHaveTextContent("running");
+    expect(screen.queryByText("一時停止中")).not.toBeInTheDocument();
+    advance(2000);
+    expect(timerText()).toBe("00:02");
+  });
+
+  it("T-408: StrictMode でも、保存したゲームを読み込んだ直後は一時停止のまま(付け直しで再開しない)", () => {
+    seedGame(richPlayingGame());
+
+    render(
+      <StrictMode>
+        <GameProvider>
+          <PausedText />
+          <GameScreen />
+        </GameProvider>
+      </StrictMode>,
+    );
+
+    expect(screen.getByTestId("paused")).toHaveTextContent("paused");
+    expect(screen.getByText("一時停止中")).toBeInTheDocument();
+  });
+
+  it("T-408: StrictMode でも、画面を離れる(外す)と一時停止になる", async () => {
+    const { view } = await startThenOpen(true);
+    expect(screen.getByTestId("paused")).toHaveTextContent("running");
+
+    view.rerender(<StartThenOpen show={false} strict />);
+
+    expect(screen.getByTestId("paused")).toHaveTextContent("paused");
+  });
+
+  it.each([false, true])(
+    "T-408: StrictMode が %s のとき、その場で失敗して「やり直す」を押すと、フォーカスが選んでいたマスに戻る",
+    async (strict) => {
+      seedGame({ ...freshGame(), mistakes: 2 });
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const ui = (
+        <GameProvider>
+          <GameScreen />
+        </GameProvider>
+      );
+      render(strict ? <StrictMode>{ui}</StrictMode> : ui);
+      await resume(user);
+      await selectCell(user, 2);
+      await user.keyboard("1");
+      expect(
+        screen.getByRole("alertdialog", { name: "失敗しました" }),
+      ).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "やり直す" }));
+
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      expect(document.activeElement).toBe(cellAt(2));
+      expect(cellAt(2)).toHaveAttribute("aria-selected", "true");
+    },
+  );
 });

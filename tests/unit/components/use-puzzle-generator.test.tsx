@@ -647,3 +647,71 @@ describe("T-416: 待っていない応答・捨てた Worker・コールバッ�
     expect(second).toHaveBeenCalledTimes(1);
   });
 });
+
+// 2026-11-03 のフェーズ 4 のレビューで足した(G-03)
+describe("T-416: 待っていないときの error、Worker を起動できない、応答が読めない", () => {
+  it("T-416: 応答の後(待っている要求が無いとき)に error が来ても失敗にせず、その Worker を捨てて次の要求で作り直す", () => {
+    const { result, onGenerated } = setup();
+    act(() => result.current.generate("easy"));
+    worker(0).respond(okResponse(0));
+    expect(result.current.status).toBe("idle");
+
+    worker(0).fail();
+
+    expect(result.current.status).toBe("idle");
+    expect(worker(0).terminateCount).toBe(1);
+    act(() => result.current.generate("easy"));
+    expect(FakeWorker.instances).toHaveLength(2);
+    expect(worker(1).posted).toHaveLength(1);
+    expect(onGenerated).toHaveBeenCalledTimes(1);
+  });
+
+  it("T-416: new Worker が例外を出すと、例外を外に出さず失敗にし、次の要求ではまた起動を試す", () => {
+    vi.stubGlobal(
+      "Worker",
+      class {
+        constructor() {
+          throw new Error("Worker を起動できない");
+        }
+      },
+    );
+    const { result } = setup();
+
+    expect(() => act(() => result.current.generate("easy"))).not.toThrow();
+    expect(result.current.status).toBe("failed");
+
+    vi.stubGlobal("Worker", FakeWorker);
+    act(() => result.current.dismiss());
+    act(() => result.current.generate("easy"));
+    expect(result.current.status).toBe("generating");
+    expect(worker(0).posted).toHaveLength(1);
+  });
+
+  it("T-416: 応答が読めない(messageerror)と失敗にし、Worker を止めて次の要求で作り直す", () => {
+    const { result } = setup();
+    act(() => result.current.generate("easy"));
+
+    act(() => {
+      worker(0).dispatchEvent(new MessageEvent("messageerror"));
+    });
+
+    expect(result.current.status).toBe("failed");
+    expect(worker(0).terminateCount).toBe(1);
+    act(() => result.current.generate("easy"));
+    expect(FakeWorker.instances).toHaveLength(2);
+  });
+
+  it("T-416: 捨てた Worker の messageerror は、今の要求を失敗にしない", () => {
+    const { result } = setup();
+    act(() => result.current.generate("easy"));
+    worker(0).fail();
+    act(() => result.current.generate("easy"));
+
+    act(() => {
+      worker(0).dispatchEvent(new MessageEvent("messageerror"));
+    });
+
+    expect(result.current.status).toBe("generating");
+    expect(worker(1).terminateCount).toBe(0);
+  });
+});

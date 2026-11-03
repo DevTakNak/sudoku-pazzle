@@ -159,6 +159,16 @@ describe("T-404: マスの表示", () => {
     expect(cellAt(6).textContent).toBe(""); // 空欄
   });
 
+  it("T-404: 誤りの数字にだけ下線が付く(色だけに頼らない。N-03)", () => {
+    // idx 3 は誤り(解は 6)、idx 2 は正解の 4、idx 0 は手がかりの 5
+    renderBoard(withValues(freshGame(), { 2: 4, 3: 1 }));
+
+    const digitOf = (index: number) => cellAt(index).querySelector("span");
+    expect(digitOf(3)).toHaveClass("underline");
+    expect(digitOf(2)).not.toHaveClass("underline");
+    expect(digitOf(0)).not.toHaveClass("underline");
+  });
+
   it("T-404: data-kind が、手がかりは clue、正解は correct、誤りは wrong、空欄とメモだけのマスは empty", () => {
     const game = withNotes(withValues(freshGame(), { 2: 4, 3: 1 }), {
       5: [1, 2, 5],

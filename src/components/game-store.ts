@@ -67,11 +67,13 @@ export function createGameStore(
     for (const listener of listeners) listener();
   }
 
-  // ゲームを先に、成績を後に保存する(G-54。成績だけ失敗したら、その 1 回が数え漏れる)
+  // ゲームを先に、成績を後に保存する(G-54。成績だけ失敗したら、その 1 回が数え漏れる)。
+  // ゲームの保存に失敗したら成績は保存しない(残った「プレイ中」のゲームで二重に数えないため)
   function persist(game: GameState, stats: SavedStats | null): boolean {
     if (storage === null) return false;
     const gameSaved = saveGame(storage, game);
-    const statsSaved = stats === null || saveStats(storage, stats);
+    const statsSaved =
+      stats === null || (gameSaved && saveStats(storage, stats));
     return gameSaved && statsSaved;
   }
 

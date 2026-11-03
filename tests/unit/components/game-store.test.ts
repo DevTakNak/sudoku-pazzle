@@ -956,6 +956,29 @@ describe("T-415: 保存できないとき(G-82)", () => {
     expect(snapshot.stats.hard.failed).toBe(1);
   });
 
+  it("T-415: ゲームの保存が失敗したときは、成績を保存しない(読み込み直して遊び切っても、二重に数えない)", () => {
+    const stats = statsOf({
+      hard: { cleared: 0, failed: 2, bestSeconds: null },
+    });
+    const { store, storage } = openWith({
+      game: playingAt("hard", 10),
+      stats,
+    });
+    storage.failWhen = (key) => key === GAME_KEY;
+
+    store.updateGame(() => failedAt("hard", 30));
+
+    expect(storage.setItemCalls).not.toContain(STATS_KEY);
+    expect(loadStats(storage)).toEqual(stats);
+
+    // 保存に残った「プレイ中」のゲームを読み込み直して失敗すると、1 回だけ数える
+    storage.failWhen = () => false;
+    const reopened = openStore(storage);
+    expect(reopened.getSnapshot().game?.status).toBe("playing");
+    reopened.updateGame(() => failedAt("hard", 40));
+    expect(loadStats(storage)?.hard.failed).toBe(3);
+  });
+
   // 失敗の後に、保存が成功する操作をしても canSave は戻らない
   it.each<[string, (store: GameStore) => void]>([
     ["tick", (store) => store.tick()],

@@ -8,6 +8,9 @@ import { GameScreen } from "@/components/game-screen";
 import type { GameState, SavedStats } from "@/lib/game/types";
 
 import {
+  BLANK_A,
+  SOLUTION_A,
+  almostSolved,
   clearedGame,
   failedGame,
   freshGame,
@@ -580,6 +583,32 @@ describe("T-407: ゲームの終了後はキーとボタンが効かない", () 
       expect(boardSignature()).toEqual(before);
       expect(savedGame()).toEqual(game);
       expect(savedStats()).toEqual(STATS);
+      for (const name of ["元に戻す", "やり直し", "消す", "メモ"]) {
+        expect(button(name)).toBeDisabled();
+      }
+      for (const digit of [1, 2, 3, 4, 5, 6, 7, 8, 9]) {
+        expect(button(String(digit))).toBeDisabled();
+      }
+    },
+  );
+
+  // 読み込んだ直後と違い、その場で終わったゲームは一時停止になっていない
+  it.each<[string, GameState, string]>([
+    ["クリア", almostSolved([BLANK_A]), String(SOLUTION_A)],
+    ["失敗", { ...freshGame(), mistakes: 2 }, "1"],
+  ])(
+    "T-407: その場で%sした直後も、矢印・M のキーが効かず、操作と数字のボタンは押せない",
+    async (_label, game, finalKey) => {
+      const user = await openPlaying(game);
+      await selectCell(user, BLANK_A);
+      await user.keyboard(finalKey);
+      expect(savedGame()!.status).not.toBe("playing");
+      expect(selectedIndex()).toBe(BLANK_A);
+
+      await user.keyboard("{ArrowRight}{ArrowDown}m");
+
+      expect(selectedIndex()).toBe(BLANK_A);
+      expect(button("メモ")).toHaveAttribute("aria-pressed", "false");
       for (const name of ["元に戻す", "やり直し", "消す", "メモ"]) {
         expect(button(name)).toBeDisabled();
       }

@@ -40,6 +40,8 @@ export function MessageDialog({
   // 押したボタンにフォーカスが残っているとブラウザが警告を出す。子の useEffect より先に動く
   // useLayoutEffect で、フォーカスのある要素を覚えてから外す(技術ルールの shadcn-tailwind.md)
   useLayoutEffect(() => {
+    // StrictMode(開発のときだけ)の付け直しでは、外した後の body を覚え直さない
+    if (returnFocusRef.current !== null) return;
     const focused = document.activeElement;
     if (focused instanceof HTMLElement) {
       returnFocusRef.current = focused;

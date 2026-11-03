@@ -95,12 +95,17 @@ export function usePuzzleGenerator(
         }
       },
     );
-    worker.addEventListener("error", () => {
-      if (workerRef.current === worker) fail();
-    });
+    // Worker のエラーと、読めない応答(G-03)。待っている要求が無ければ、知らせずに捨てて作り直す
+    const onBroken = () => {
+      if (workerRef.current !== worker) return;
+      if (pendingIdRef.current === null) discardWorker();
+      else fail();
+    };
+    worker.addEventListener("error", onBroken);
+    worker.addEventListener("messageerror", onBroken);
     workerRef.current = worker;
     return worker;
-  }, [finish, fail]);
+  }, [finish, fail, discardWorker]);
 
   const generate = useCallback(
     (difficulty: Difficulty) => {
@@ -110,7 +115,14 @@ export function usePuzzleGenerator(
         difficulty,
         seed: randomSeed(),
       };
-      const worker = getWorker();
+      let worker: Worker;
+      try {
+        worker = getWorker();
+      } catch {
+        // Worker を起動できない(G-03)
+        setStatus("failed");
+        return;
+      }
       pendingIdRef.current = request.requestId;
       timerRef.current = setTimeout(fail, RESPONSE_TIMEOUT_MS);
       setStatus("generating");

@@ -116,8 +116,8 @@ export function Board({
                 aria-label={labelOf(game, index, hidden)}
                 aria-selected={index === selected}
                 data-index={index}
-                // Tab で盤面に入るのは 1 マスだけ(選んだマス。未選択なら左上)
-                tabIndex={index === (selected ?? 0) ? 0 : -1}
+                // Tab で盤面に入るのは 1 マスだけ(選んだマス。未選択なら左上)。隠している間は入らない
+                tabIndex={!hidden && index === (selected ?? 0) ? 0 : -1}
                 data-kind={hidden ? undefined : kind}
                 data-highlight={
                   hidden ? "none" : highlightOf(game, index, selected, errors)

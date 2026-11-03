@@ -3,7 +3,7 @@
 // ゲーム(画面仕様書の「ゲーム(/play)」)
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { redo, undo } from "@/lib/game/history";
 import { eraseCell, inputDigit } from "@/lib/game/input";
@@ -59,16 +59,30 @@ export function GameScreen() {
     return () => clearInterval(id);
   }, [running, store]);
 
-  // タブが隠れたとき(G-62)と、画面を離れたときは一時停止
+  // 画面を離れたときは一時停止(G-62)。StrictMode(開発のときだけ)は、効果をすぐ片付けて
+  // 付け直すので、片付けで止めた分は付け直しで戻す(付け直しでは同じ ref が残る)
+  const pausedOnLeaveRef = useRef(false);
   useEffect(() => {
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") store.setPaused(true);
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    if (pausedOnLeaveRef.current) {
+      pausedOnLeaveRef.current = false;
+      store.setPaused(false);
+    }
     return () => {
-      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (store.getSnapshot().paused) return;
+      pausedOnLeaveRef.current = true;
       store.setPaused(true);
     };
+  }, [store]);
+
+  // タブが隠れたとき、隠れている間に開いたときは一時停止(G-62)
+  useEffect(() => {
+    const pauseIfHidden = () => {
+      if (document.visibilityState === "hidden") store.setPaused(true);
+    };
+    pauseIfHidden();
+    document.addEventListener("visibilitychange", pauseIfHidden);
+    return () =>
+      document.removeEventListener("visibilitychange", pauseIfHidden);
   }, [store]);
 
   function enterDigit(digit: number) {
@@ -133,7 +147,7 @@ export function GameScreen() {
       <header className="flex flex-wrap items-center justify-between gap-2 text-sm">
         <Link
           href="/"
-          className="flex h-11 items-center font-medium text-blue-700 underline"
+          className="flex h-11 min-w-11 items-center justify-center font-medium text-blue-700 underline"
         >
           ホーム
         </Link>
