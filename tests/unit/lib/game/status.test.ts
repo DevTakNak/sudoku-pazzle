@@ -12,7 +12,6 @@ import {
   BLANK_C,
   SOLUTION_A,
   SOLUTION_B,
-  SOLUTION_C,
   almostSolved,
   clearedGame,
   emptyNotes,

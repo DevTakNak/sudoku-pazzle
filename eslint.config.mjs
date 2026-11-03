@@ -17,6 +17,8 @@ const eslintConfig = defineConfig([
     "coverage/**",
     "test-results/**",
     "playwright-report/**",
+    // 画面のモック(Prettier と同じく対象から外す。2026-11-03 にユーザが決めた)
+    "src/components/mocks/**",
   ]),
   // 書式のルールを切り、書式は Prettier に任せる(配列の最後に置く。技術ルールの eslint-prettier.md)
   prettier,

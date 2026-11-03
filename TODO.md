@@ -69,9 +69,9 @@ flowchart LR
   - [x] `npm audit` は 21 件(low 2、moderate 19。本番の依存は 0 件)に増えた。増えた分は `shadcn` の中の `ts-morph` 経由の `minimatch`(上の見送りと同じ根)と、`@shadcn/registry` の中の `deepmerge`(low、GHSA-gcqx-w48m-w2h4。最新の 4.3.1 も対象で、直った版が無い)。どちらも開発用の依存なので、`minimatch` と同じく上流待ちとし、フェーズ 2 と 7 の項目で確かめる
 - [x] Vitest、React Testing Library、カバレッジ(`json-summary` を含む)を入れる。`components/ui/` を計測から外す(2026-11-03。`vitest`・`@vitest/coverage-v8` 5.0.5(`latest` の 5.1.0 は 11-02 公開。4.1.12 は 4 系のバックポート)、`jsdom` 30.1.3、`@testing-library/*`。中の `vite` が 8.3.5(10-21 公開)で入るので、`vite` 8.3.4 を `--save-exact` で開発用の依存に入れた。設定は `vitest.config.mts` と `tests/setup.ts`。一時的なテストで、jsdom・React Testing Library・jest-dom・`@/`・shadcn/ui のボタンが動き、`coverage-summary.json` から `components/ui/` が外れることを確かめてから消した)
   - [x] `fsevents` のインストール後スクリプトを拒否した(2026-11-03 にユーザが決めた。同梱の部品を使うので動きは変わらない。`allowScripts` に記録し、入れ直しで警告が出ないことを確かめた)
-- [ ] ESLint の対象から画面のモック(`src/components/mocks/`)を外す。`mock.js` の使っていない関数で警告が 2 件出ている(Prettier は外している)(2026-11-03 のフェーズ 6 の網羅確認で追加)
-- [ ] どこからも使っていない本番の依存 `lucide-react` を消す。`components.json` の `iconLibrary` は残す(2026-11-03 のフェーズ 6 の網羅確認で追加)
-- [ ] `lint` のスクリプトと lint-staged の `eslint` に `--max-warnings 0` を付ける(`eslint-prettier.md`、`husky-lint-staged.md`。2026-11-03 のフェーズ 6 の振り返りで足したルール。上のモックの項目と、フェーズ 3 の `SOLUTION_C` の項目を片付けてから付ける)
+- [x] ESLint の対象から画面のモック(`src/components/mocks/`)を外す。`mock.js` の使っていない関数で警告が 2 件出ている(Prettier は外している)(2026-11-03 のフェーズ 6 の網羅確認で追加)(2026-11-03。`eslint.config.mjs` の `globalIgnores` に足した)
+- [x] どこからも使っていない本番の依存 `lucide-react` を消す。`components.json` の `iconLibrary` は残す(2026-11-03 のフェーズ 6 の網羅確認で追加)(2026-11-03。`npm uninstall` の後、型チェックとビルドが通った)
+- [x] `lint` のスクリプトと lint-staged の `eslint` に `--max-warnings 0` を付ける(`eslint-prettier.md`、`husky-lint-staged.md`。2026-11-03 のフェーズ 6 の振り返りで足したルール。上のモックの項目と、フェーズ 3 の `SOLUTION_C` の項目を片付けてから付ける)(2026-11-03。警告 0 件で通り、使っていない変数のある一時的なファイルでは失敗することを確かめてから消した)
 - [x] ESLint と Prettier を設定する。Prettier の対象に仕様書の Markdown とモックを含めるか、`prettier-plugin-tailwindcss` を使うかをユーザに確認する(`eslint-prettier.md`)(2026-11-03。ユーザが決めた: `*.md` とモックは整形しない(`.prettierignore`)、`prettier-plugin-tailwindcss` 0.8.1 を使う。`prettier` 3.9.10 は `--save-exact`。`eslint-config-prettier` 10.1.8 を ESLint の設定の最後に置いた)
   - [x] 全体の整形(`npm run format`)だけのコミットを作り、ハッシュを `.git-blame-ignore-revs` に書く(`eslint-prettier.md`。雛形と shadcn/ui の生成物の 5 ファイル)(2026-11-03。コミット f4fd5b8。`git config blame.ignoreRevsFile` は `/sandbox` で `.git/config` に書けず、ユーザが自分のターミナルで設定した)
 - [x] Husky と lint-staged を入れる(`husky-lint-staged.md`)(2026-11-03。`husky` 9.1.7、`lint-staged` 17.6.0。`.husky/pre-commit` は `npx lint-staged`。`husky init` は `/sandbox` で `core.hooksPath` を書けず、ユーザが自分のターミナルで `npx husky` を実行した)
@@ -156,7 +156,7 @@ flowchart LR
 - [ ] 読み込みの検証の「整数の上限は 2^53-1」のテストを足す(`elapsedSeconds`、成績の `cleared`・`failed`・`bestSeconds` で、`Number.MAX_SAFE_INTEGER` は読め、`2 ** 53` は捨てる)。上限を外すと落ちることを確かめる
 - [ ] 実際の操作(入力、メモ、消す、元に戻す、やり直し、間違い 3 回の失敗、全部正解のクリア)で作った状態を、保存して読み込むと同じ状態に戻る往復のテストを足す(`web-browser.md`。今の往復のテストは手で書いた状態だけ)
 - [ ] `src/lib/CLAUDE.md` の「入力」に、範囲外の数字(1〜9 以外)とマスの番号(0〜80 以外)は何も変えないことを書く(T-108 にはあり、仕様書に無かった)
-- [ ] `status.test.ts` で使っていない `SOLUTION_C` の読み込みを消す(lint の警告)
+- [x] `status.test.ts` で使っていない `SOLUTION_C` の読み込みを消す(lint の警告)(2026-11-03)
 - [ ] `input.test.ts` の「EDGE_PUZZLE の解は 1 つで、UNIQUE_SOLUTION と一致する」のテストを、名前どおりに一致まで確かめるか、名前を中身に合わせる
 - [ ] 使っていない export(`snapshotOf`、`parseStats`)の `export` を外し、呼ばれていない `FakeStorage.raw()`(`tests/helpers/storage.ts`)を消す
 - [ ] 「整数かつ範囲内」の判定(`grid.ts`、`storage.ts`、`generator-messages.ts`)と `isRecord` を 1 か所にまとめ、`generator-messages.ts` の型の主張(`as Record<string, unknown>`)を型ガードにする
@@ -260,7 +260,7 @@ flowchart LR
 このフェーズを始める指示には「ultrathink」を含める。
 
 - [x] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う(2026-11-03。更新のチェックは前回の 2026-10-24 から 2 週間たっていないので行わなかった。このプロジェクトが参照する待ちの TODO は無かった。網羅確認で E2E(Playwright Test)を動かすので、ユーザが `/sandbox` をこのフェーズは無効にすると決めた。フェーズの終わりに有効に戻す)
-- [ ] フェーズの終わりに `/sandbox` を有効に戻してもらう(自動許可のモードを選び直す)
+- [ ] フェーズの終わりに `/sandbox` を有効に戻してもらう(自動許可のモードを選び直す)(2026-11-03 にユーザが、網羅確認で追加した残タスク(E2E の変更を含む)を片付け終えるまで無効のままにすると決めた)
 - [x] 試行中の「リファクタリング」の専門エージェントを作るかをユーザに確認し、作ると決めたら作る(2026-11-03。ユーザが作らないと決めた。整形は Prettier と ESLint が受け持ち、使っていないコードは lint とカバレッジで見られ、網羅確認は `code-reviewer` と呼び出し元で行うため)
 - [x] Sequential Thinking MCP を使い、実装したコードを網羅的に確認する(仕様書と実装の突き合わせ、コーディング規約、チェック済みの TODO がコードとテストで満たされているか、テストの品質、lint・型チェック・テスト・画面での動作)(2026-11-03。`code-reviewer` を 2 つ(`src/lib` と、画面・E2E)に分けて動かし、指摘は呼び出し元が抜き取りで確かめて、どれも事実だった。Sequential Thinking で観点とフェーズに分けた。lint はエラー 0 件・警告 3 件、型チェックと Prettier は通った。単体テストは 946 件すべて成功(カバレッジはフェーズ 4 と同じ。全体の行 98.46%・分岐 99.32%)。E2E は 54 件(成功 51、意図した skip 3、失敗 0)。ビルドは 4 ページとも静的。画面での動作は、本番のビルドで動かす E2E で確かめた。重さ「高」(仕様と違う動き、データの消失)は無かった)
 - [x] 残タスクがあれば、一覧をユーザに出力する(内容、見つけた観点、本来実施すべきだったフェーズ)(2026-11-03。30 件(中 4 件: 一意性の確かめ方と G-01 の食い違い、生成の例外の投げ直しのテスト、整数の上限のテスト、生成中の「成績」のリンクのテスト)。ユーザが決めた: G-01 は仕様書を直す、タイマーは MVP はこのまま、画面のボタンと一時停止の覆いは仕様書とモックを実装に合わせる、実装にあって仕様書に無い動き 6 件は実装どおり書き足す)
