@@ -1,14 +1,14 @@
 "use client";
 
 // 文言とボタンだけのダイアログ。ホームの確認・作れなかったとき、ゲームのクリア・失敗で使う
+import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
 import { useLayoutEffect, useRef } from "react";
 
 import {
   AlertDialog,
-  AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
+  AlertDialogOverlay,
+  AlertDialogPortal,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -54,37 +54,40 @@ export function MessageDialog({
         if (!open) onDismiss?.();
       }}
     >
-      <AlertDialogContent
-        // 幅 320px でも左右に余白を残す(モックの p-4)
-        className="w-[calc(100%-2rem)]"
-        finalFocus={() => returnFocusRef.current ?? true}
-      >
-        <AlertDialogHeader>
+      {/* shadcn/ui の AlertDialogContent は、狭い幅での中央寄せ、ボタンの帯、背景のぼかしが
+          モックと違い、背景の指定も渡せないので、部品を組み合わせてモックの見た目にする */}
+      <AlertDialogPortal>
+        <AlertDialogOverlay className="bg-black/50 supports-backdrop-filter:backdrop-blur-none" />
+        <AlertDialogPrimitive.Popup
+          // 幅 320px でも左右に余白を残す(モックの p-4)
+          className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-lg duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+          finalFocus={() => returnFocusRef.current ?? true}
+        >
           <AlertDialogTitle className="text-lg font-bold">
             {title}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-gray-700">
+          <AlertDialogDescription className="mt-2 text-wrap text-gray-700">
             {description}
           </AlertDialogDescription>
-        </AlertDialogHeader>
-        {children}
-        {/* モックと同じく、幅によらずボタンを横に並べる */}
-        <AlertDialogFooter className="flex-row">
-          {actions.map((action) => (
-            <Button
-              key={action.label}
-              variant={action.primary ? "default" : "outline"}
-              className={cn(
-                "h-11 flex-1",
-                action.primary && "bg-blue-700 text-white hover:bg-blue-800",
-              )}
-              onClick={action.onClick}
-            >
-              {action.label}
-            </Button>
-          ))}
-        </AlertDialogFooter>
-      </AlertDialogContent>
+          {children && <div className="mt-4">{children}</div>}
+          {/* モックと同じく、幅によらずボタンを横に並べる */}
+          <div className="mt-5 flex gap-2">
+            {actions.map((action) => (
+              <Button
+                key={action.label}
+                variant={action.primary ? "default" : "outline"}
+                className={cn(
+                  "h-11 flex-1",
+                  action.primary && "bg-blue-700 text-white hover:bg-blue-800",
+                )}
+                onClick={action.onClick}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        </AlertDialogPrimitive.Popup>
+      </AlertDialogPortal>
     </AlertDialog>
   );
 }
