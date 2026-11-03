@@ -28,3 +28,4 @@ playwright-report/
 
 # debug
 npm-debug.log*
+.vercel

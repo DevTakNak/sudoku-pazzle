@@ -1,0 +1,12 @@
+# ルート直下は全部外し、ビルドに要るものだけを許可する
+# (テスト、テストの設定、.env*、仕様書、coverage/ などを上げないため)
+/*
+!src
+!package.json
+!package-lock.json
+!next.config.ts
+!tsconfig.json
+
+# src の中の仕様書と画面のモック
+src/**/CLAUDE.md
+src/components/mocks

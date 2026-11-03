@@ -278,26 +278,28 @@ flowchart LR
 
 デプロイはユーザの指示を受けてから行う。
 
-- [ ] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う
-- [ ] 技術ルール(`vercel.md`)を読み込む
+- [x] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う(2026-11-04。更新のチェックは前回の 2026-10-24 から 2 週間たっていないので行わなかった。このプロジェクトが参照する待ちの TODO は無かった。Docker も Playwright Test も使わないので、`/sandbox` は有効のままにする)
+- [x] 技術ルール(`vercel.md`)を読み込む(2026-11-04)
 
 2026-11-03 にデプロイ先を Cloud Run から Vercel に変えた(`CLAUDE.md` の「デプロイ先を Vercel にした理由」)。Cloud Run 用の項目(Google Cloud のプロジェクト、Dockerfile、Artifact Registry、予算の通知など)は消した。
 
 ### 準備
 
-- [ ] Hobby プランの無料枠と利用条件(個人・非商用)を、公式の情報で確かめ直す(`vercel.md`)
-- [ ] Vercel CLI の入れ方(グローバルに入れるか、版を固定して `npx` で動かすか)を決めてユーザに確認し、入れたら `~/Development/Rules/tools.md` に書く
-- [ ] Vercel のアカウントを用意し、CLI でログインする(ユーザの操作)
-- [ ] `npm audit`(全体と `--omit=dev`)と `next` のセキュリティの指摘をもう一度確かめる(フェーズ 1 で `minimatch` を見送り、フェーズ 2 で Next.js の 11 月の指摘を確かめる。その後に出たものも見る)
-- [ ] `package.json` の `engines.node` に `"26.x"` を書き、Vercel で Node.js 26 を使う(`vercel.md`。マイナー版とパッチ版は Vercel が上げるので、公開から 2 週間たった版は選べない)
-- [ ] `/security-review` の対象になる変更があるかを確かめ、あれば実行して記録する
+- [x] Hobby プランの無料枠と利用条件(個人・非商用)を、公式の情報で確かめ直す(`vercel.md`)(2026-11-04。https://vercel.com/docs/plans/hobby と https://vercel.com/docs/limits/fair-use-guidelines(どちらも最終更新 2026-09-14)で確かめた。月に Fast Data Transfer 100 GB、CDN Requests 100 万、Function Invocations 100 万、デプロイは 1 日 100 回。超えると課金されずに、多くは 30 日待つ。個人・非商用だけで、寄付は商用に入らない。`vercel.md` の内容から変わったところは無かった)
+- [x] Vercel CLI の入れ方(グローバルに入れるか、版を固定して `npx` で動かすか)を決めてユーザに確認し、入れたら `~/Development/Rules/tools.md` に書く(2026-11-04。ユーザが、開発用の依存に版を固定して入れ、`npx vercel` で動かすと決めた。公開から 2 週間たった最新の `vercel@65.0.0`(10 月 20 日)を `--save-exact` で入れた。プロジェクトの依存なので、`tools.md` には書かない。既存の依存の版は変わらなかった。`npm audit` は 24 件から 57 件(低 2・中 29・高 25・重大 1)に増え、`--omit=dev` は 0 件のまま。増えた分は CLI の依存(`undici`、`tar`、`path-to-regexp`、`js-yaml`、`smol-toml`、`zod` など)で、64.7.0〜65.10.0 のどの版でも 38〜41 件あり、上げても減らない。CLI は手元でデプロイに使うだけで、本番に出るのは静的なファイルだけなので、65.0.0 のままにする。`esbuild` の install script は許可していない(要るかは、デプロイで確かめる))
+- [x] Vercel のアカウントを用意し、CLI でログインする(ユーザの操作)(2026-11-04。既存の Hobby のアカウントに、ユーザが `npx vercel login` でログインした。`npx vercel whoami` で確かめた)
+- [x] `npm audit`(全体と `--omit=dev`)と `next` のセキュリティの指摘をもう一度確かめる(フェーズ 1 で `minimatch` を見送り、フェーズ 2 で Next.js の 11 月の指摘を確かめる。その後に出たものも見る)(2026-11-04。`--omit=dev` は 0 件。全体は 24 件(低 2・中 22)で、元は開発用の `minimatch`(GHSA-g3hv-75wg-m249)と `deepmerge`(GHSA-gcqx-w48m-w2h4)だけ。`next@16.4.2` は、10 月 14 日の 3 件(16.4.1 で修正)を含む。11 月 3 日に予定の 11 月のセキュリティリリース(中 7 件)は、2026-11-04 の時点で npm の最新が 16.4.4(11 月 2 日、セキュリティ修正なし)で、まだ出ていない)
+  - [ ] Next.js の 11 月のセキュリティリリースが出たら、影響を確かめ、本番にデプロイする前に上げるかをユーザに確認する(2026-11-04 に追加)
+- [x] `package.json` の `engines.node` に `"26.x"` を書き、Vercel で Node.js 26 を使う(`vercel.md`。マイナー版とパッチ版は Vercel が上げるので、公開から 2 週間たった版は選べない)(2026-11-04。公式のページで 26.x が使え、既定であることを確かめた。`package-lock.json` のルートにも同じ値が入った)
+- [x] `/security-review` の対象になる変更があるかを確かめ、あれば実行して記録する(2026-11-04。前回のレビューの後のコミットは TODO.md だけで、`origin/main` と HEAD は同じ。このフェーズで変えた `engines` も対象にならないので、実行しなかった。`.vercelignore` などデプロイの設定は、セキュリティレビューの対象(認証、データの分離、外部からの入力、外部の入口)に入らない)
 
 ### デプロイ
 
-- [ ] `.vercelignore` を作る(テスト、テストの設定、`.env*`、`.playwright-mcp/`、`coverage/` などを入れない)
-- [ ] `next build` の出力で、どのページも静的(○ Static)になっていて、サーバーで動く処理が無いことを確かめる
-- [ ] CLI でプロジェクトをつなぐ(`vercel link`)。GitHub 連携は設定しない。`.vercel/` が `.gitignore` に入ったことを確かめる
-- [ ] プロジェクトの設定(Node.js の版、ビルドのコマンド、Git の連携が無いこと、Deployment Protection)を読み出して確かめる
+- [x] `.vercelignore` を作る(テスト、テストの設定、`.env*`、`.playwright-mcp/`、`coverage/` などを入れない)(2026-11-04。ルート直下を全部外し、ビルドに要る `src`・`package.json`・`package-lock.json`・`next.config.ts`・`tsconfig.json` だけを許可する形にした。`src` の中の仕様書(`CLAUDE.md`)とモックも外した。Vercel の CLI が使う `ignore` パッケージで手元のファイルに当てはめ、上がるのは 42 ファイルで、テスト・仕様書・`.env*` などが入らないことを確かめた。42 ファイルだけを作業用のフォルダに写してビルドが通ることも確かめた。`prepare` の husky は、`.git` が無いとメッセージを返すだけで失敗しない(`husky@9.1.7` のコードで確かめた)。実際に上がったファイルは、デプロイの後に確かめる)
+  - [ ] プレビューにデプロイした後に、デプロイに上がったファイルの一覧が 42 ファイルと同じかを確かめる(2026-11-04 に追加)
+- [x] `next build` の出力で、どのページも静的(○ Static)になっていて、サーバーで動く処理が無いことを確かめる(2026-11-04。上の 42 ファイルだけでのビルドで、`/`、`/_not-found`、`/play`、`/stats` が ○ Static。`favicon.ico` も `prerender-manifest.json` に入り、事前に作られる。`/`・`/play`・`/stats` の HTML に `<meta name="robots" content="noindex, nofollow"/>` が入っていた)
+- [x] CLI でプロジェクトをつなぐ(`vercel link`)。GitHub 連携は設定しない。`.vercel/` が `.gitignore` に入ったことを確かめる(2026-11-04。ユーザがプロジェクト名を `sudoku-pazzle` に決めた。`npx vercel link --yes --project sudoku-pazzle` で、Hobby のチーム(Toddling beginners)にプロジェクトを作った。CLI が `.gitignore` に `.vercel` を足した。CLI が `VERCEL_OIDC_TOKEN` だけを書いた `.env.local` も作った。アプリでは使わない。git と `.vercelignore` の両方で外れていることを確かめた後、プロジェクトの「`.env` のファイルを使わない」に合わせて、ユーザの了承を得て消した)
+- [x] プロジェクトの設定(Node.js の版、ビルドのコマンド、Git の連携が無いこと、Deployment Protection)を読み出して確かめる(2026-11-04。`npx vercel project inspect` と `npx vercel api /v9/projects/sudoku-pazzle` で読み出した。フレームワークは Next.js、Node.js は 26.x、ビルド・インストールのコマンドと出力先は既定(`null`)、Git の連携(`link`)は無し、環境変数は 0 件。Deployment Protection は Standard Protection(`ssoProtection` が `all_except_custom_domains`。Vercel Authentication)で、公式の説明(https://vercel.com/docs/deployment-protection)では、本番のドメインは保護されず、プレビューとデプロイごとの URL は Vercel にログインした人だけが開ける。本番は認証をかけない要件に合うので、このままにした。関数のリージョンは `iad1` だが、関数は無い)
 - [ ] プレビューにデプロイして確かめてから、本番にデプロイする
 - [ ] 本番の URL で `noindex` が付いていることを確かめる(N-04)
 - [ ] 本番の画面で確かめる項目の一覧を作り、ユーザに自分のブラウザで確かめてもらう
