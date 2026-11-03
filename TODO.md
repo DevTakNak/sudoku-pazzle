@@ -328,13 +328,20 @@ flowchart LR
 
 `github-pr-cycle` スキルの「MVP 後の開発サイクル(GitHub)」に移る。
 
-- [ ] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う
-- [ ] 技術ルール(`github-flow.md`、`github-actions.md`)を読み込む
-- [ ] GitHub のリポジトリを公開にするか非公開にするかをユーザに確認する(無料プランの非公開ではブランチの保護と Environments の承認を使えない)
-- [ ] リポジトリを作り、`git remote set-url origin` で向き先を変える
-- [ ] リポジトリの設定(squash マージだけを許可、マージしたブランチの自動削除)
+- [x] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う(2026-11-04。更新のチェックは前回の 2026-10-24 から 2 週間たっていないので行わなかった。このプロジェクトが参照する待ちの TODO は無かった。`gh` が囲いの中で、キーチェーンのログイン情報を読めず、TLS の検証(`x509: OSStatus -26276`)でも失敗したので、ユーザが、このフェーズは `/sandbox` を無効にすると決めた)
+  - [ ] フェーズの終わりに `/sandbox` を有効に戻してもらう(自動許可のモードを選び直す)
+- [x] 技術ルール(`github-flow.md`、`github-actions.md`)を読み込む(2026-11-04。`github-pr-cycle` スキルも読んだ)
+- [x] GitHub のリポジトリを公開にするか非公開にするかをユーザに確認する(無料プランの非公開ではブランチの保護と Environments の承認を使えない)(2026-11-04。ユーザが公開にすると決めた。その前に、履歴に秘密の値(トークンや鍵の形の文字列、`.env*`、`.vercel/`、認証情報のファイル)が無いこと、コミットの作者のメールが GitHub の `noreply` のアドレスだけであることを確かめた。仕様書と TODO.md の作業の進め方、手元のフォルダの名前、ほかのプロジェクトの名前は公開になることを伝えた)
+- [x] リポジトリを作り、`git remote set-url origin` で向き先を変える(2026-11-04。`gh repo create` で公開のリポジトリ `DevTakNak/sudoku-pazzle` を作り(Wiki は無効)、`origin` を GitHub に向けて `main` を push し、`git remote set-head origin main` で `origin/HEAD` を作った。手元の bare リポジトリ(`~/Development/git-local/sudoku-pazzle.git`)は消さずに残した)
+- [x] リポジトリの設定(squash マージだけを許可、マージしたブランチの自動削除)(2026-11-04。`gh repo edit` で設定し、読み出して確かめた: squash だけ許可、マージのコミットと rebase は不可、マージしたブランチは自動で消す、squash のメッセージは PR のタイトルと本文。Actions の既定の権限は読み取りだけ、フォークからの PR は初めての人のときに承認が要る、のままにした)
 - [ ] PR で動くテストのワークフローと、承認者だけがタグを指定してデプロイできるワークフロー(デプロイ先を Vercel に変えたので、Workload Identity Federation は使わない。Vercel CLI をワークフローで動かすときの認証の方法を、公式の情報で調べてユーザに確認する。`github-flow.md` と `github-actions.md` の Google Cloud 向けの部分は当てはまらない)
-- [ ] PR のテンプレートと `CHANGELOG.md`
+  - 2026-11-04 に調べた: Vercel の公式の記事(https://vercel.com/kb/guide/how-can-i-use-github-actions-with-vercel、2026-10-16 更新)で、GitHub Actions からのデプロイの認証は OIDC に対応しておらず、`VERCEL_TOKEN`(静的なトークン)と `VERCEL_ORG_ID`・`VERCEL_PROJECT_ID` を Secrets に置く。トークンは 1 つのプロジェクトだけに絞れ、有効期限も選べる(https://vercel.com/docs/accounts/access-tokens)。ユーザが、`sudoku-pazzle` だけに絞った、有効期限つきのトークンにすると決めた
+  - 2026-11-04 にユーザが案を了承して作った: `.github/workflows/test.yml`(PR と、デプロイからの呼び出しで、lint・整形の確認・型チェック・単体テスト・E2E)と `.github/workflows/deploy.yml`(手動の実行だけ。`main` から実行したこと、実行した人が `DEPLOY_APPROVERS` にいること、タグの形、タグが `main` の履歴にあることを確かめ、タグでテストを動かし、Environment `production` の承認を待ってから `npx vercel deploy --prod --yes`)。Actions は公開から 2 週間たった版のハッシュで固定した(`actions/checkout` v7.0.1、`actions/setup-node` v7.1.0)。actionlint 1.7.12 で指摘 0 件。承認者の判定は、4 つの入力(1 人、カンマ区切りの 2 人、空、前方一致の別名)で確かめた。GitHub の側に、Variables の `DEPLOY_APPROVERS`(`DevTakNak`)、Environment `production`(承認者は `DevTakNak`、実行できるブランチは `main` だけ)、その Secrets の `VERCEL_ORG_ID` と `VERCEL_PROJECT_ID`(値を出さずに `.vercel/project.json` から登録)を作り、読み出して確かめた
+  - [ ] PR を出して、テストのワークフローが通ることを確かめる
+  - [ ] `main` のルールセット(PR を必須、テストのワークフローの成功を必須、force push と削除の禁止)と、Actions の SHA 固定の必須を設定し、読み出して確かめる
+  - [ ] ユーザが Vercel で `sudoku-pazzle` だけに絞った有効期限つきのトークンを作り、`production` の Secrets の `VERCEL_TOKEN` に登録する。期限の前に作り直す項目を、繰り返しのタスク(`~/Development/Rules/TODO-recurring.md`)に足すかをユーザに確認する
+  - [ ] デプロイのワークフローを、承認者のユーザに 1 度実行してもらい、本番に出ることを確かめる(まだ通していないプレビュー → 本番の流れは、このワークフローに置き換える)
+- [x] PR のテンプレートと `CHANGELOG.md`(2026-11-04。`.github/pull_request_template.md` に、変更の概要、確かめたこと(`make test`、`make test-e2e`、仕様書、バージョンと変更履歴)、`Closes #` を置いた。`CHANGELOG.md` に、MVP の初期バージョンを 0.1.0 として書いた。`CLAUDE.md` の本番の構成とディレクトリ構成も直した)
 - [ ] TODO.md の未完了の項目を Issue に移し、TODO.md にはその後の扱い(Issue で管理すること)を書く
 
 ### 振り返り

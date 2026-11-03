@@ -1,0 +1,100 @@
+name: deploy
+
+# 承認者が、デプロイするバージョンのタグを指定して手動で実行する
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: デプロイするタグ(v1.2.3 の形)
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: main から実行していることを確かめる
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::main から実行してください(今は ${GITHUB_REF})"
+          exit 1
+
+      - name: 実行した人が承認者であることを確かめる
+        env:
+          APPROVERS: ${{ vars.DEPLOY_APPROVERS }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          # 承認者は空白かカンマで区切る
+          if ! printf '%s\n' "$APPROVERS" | tr -s ', ' '\n' | grep -qxF "$ACTOR"; then
+            echo "::error::${ACTOR} は承認者(DEPLOY_APPROVERS)に入っていません"
+            exit 1
+          fi
+
+      - name: タグの形を確かめる
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if ! printf '%s' "$TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::タグは v1.2.3 の形で指定してください(${TAG})"
+            exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: タグがあり、main の履歴に入っていることを確かめる
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if ! git rev-parse --verify --quiet "refs/tags/${TAG}^{commit}" >/dev/null; then
+            echo "::error::タグ ${TAG} がありません"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "refs/tags/${TAG}" origin/main; then
+            echo "::error::タグ ${TAG} は main の履歴に入っていません"
+            exit 1
+          fi
+
+  test:
+    needs: verify
+    uses: ./.github/workflows/test.yml
+    with:
+      ref: refs/tags/${{ inputs.tag }}
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # 実行の前に、Environment の承認者の承認を求める
+    environment:
+      name: production
+      url: https://sudoku-pazzle.vercel.app
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # ビルドは Vercel 側で行う(make deploy-prod と同じ)
+      - run: npx vercel deploy --prod --yes
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
