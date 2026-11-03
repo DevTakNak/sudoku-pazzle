@@ -49,7 +49,7 @@ flowchart LR
 - [x] `git init` と、手元の bare リポジトリ(`~/Development/git-local/sudoku-pazzle.git`)を `origin` にする設定(2026-11-03 に済んだ。`origin/HEAD` も作成済み)
 - [x] `.nvmrc` を `26` にする。`node -v` と比べる(`node.md`)(2026-11-03。シェルの `node -v` は v26.13.0(nvm の既定)で、`.nvmrc` と合っていた)
 - [x] `create-next-app` を scratchpad で作って取り込む。`CLAUDE.md` は取り込まず、`AGENTS.md` はコミットする。`.gitignore` は中身を合わせる(`nextjs.md`)(2026-11-03。`create-next-app@16.4.2`(2 週間たった安定版の最新)で、TypeScript・Tailwind CSS・ESLint・App Router・`src/`、React Compiler と Cache Components は無効(ユーザが決めた)。16.4.2 は `CLAUDE.md` を作らなかった。`README.md` はフェーズ 8 で書くので取り込まなかった。`.gitignore` には `/build/`、`*.pem`、`npm-debug.log*` だけを足した)
-  - [ ] `/sandbox` の中で動かすと、雛形を作った後に設定の保存(`~/Library/Preferences`)で `Maximum call stack size exceeded` で落ちる(雛形はできている。落ちたのは設定の保存と推測)。技術ルール `nextjs.md` に書くかを、フェーズ 1 の振り返りで提案する
+  - [x] `/sandbox` の中で動かすと、雛形を作った後に設定の保存(`~/Library/Preferences`)で `Maximum call stack size exceeded` で落ちる(雛形はできている。落ちたのは設定の保存と推測)。技術ルール `nextjs.md` に書くかを、フェーズ 1 の振り返りで提案する(2026-11-03。振り返りで、サンドボックスに当てはまることなので `claude-code-sandbox.md` に書いた)
 - [x] 入った依存の公開日を確かめ、2 週間たっていない版を下げる(`npm.md`。`dependency-update-reviewer` に調べさせ、`AGENTS_TRIAL.md` に記録する)(2026-11-03。ユーザが決めた: `tailwindcss` と `@tailwindcss/turbopack` を 4.3.4 から 4.3.3 に下げた(`^4.3.3`)。`react`・`react-dom` を 19.3.1、`@types/node` を 26.6.5 に上げた。`next`・`eslint-config-next` は 16.4.2 のまま)
   - [x] `npm audit` は moderate 16 件(本番の依存は 0 件)。根は ESLint 系の中の `minimatch`(GHSA-g3hv-75wg-m249、`< 11.0.1`)だけで、ESLint 10 や各プラグインの最新版もまだ 11 未満に依存するため、上流の修正待ちとして見送る(2026-11-03 にユーザが決めた。開発用の依存だけで本番に入らず、入力はリポジトリの中のパターンだけのため)。再確認はフェーズ 2 と 7 の項目
 - [x] ESLint と TypeScript の版を決める。待ちの TODO の「ESLint 10 への更新」「TypeScript 7 への更新」を参照する(`~/Development/Rules/TODO-waiting.md`)(2026-11-03。ESLint は 9.39.5(9 系の最後。9 系は 2026-08-06 にサポート終了だが、10 は待ちの TODO の条件を満たしていない)。TypeScript は 6.0.3 にするとユーザが決めた。`tsconfig.json` は雛形のままで型チェックが通った)
@@ -75,7 +75,7 @@ flowchart LR
 
 ### 振り返り
 
-- [ ] フェーズ内で実施した作業において、今後の開発に活かせそうなルールがないか振り返って確認し、ルールとして採用するべき項目があれば、提案する
+- [x] フェーズ内で実施した作業において、今後の開発に活かせそうなルールがないか振り返って確認し、ルールとして採用するべき項目があれば、提案する(2026-11-03。7 件を提案し、ユーザが全部を採用した。`claude-code-sandbox.md` の「囲いと合わない作業」に 5 行(ビルドの待ち受け、npm のキャッシュ、`next/font/google`、`.git/config`、`create-next-app`)、`npm.md` に公開日が境目のときは時刻で比べること、`shadcn-tailwind.md` に `init` がフォントを入れ直すことを書いた。バックアップは `~/Development/Rules/Backup/` の `*.2026-11-03-1300.bak`)
   - 提案の候補(2026-11-03 に出てきたもの): `/sandbox` の中では、Next.js のビルドも Turbopack の CSS の loader がローカルのポートで待ち受けるため `allowLocalBinding` が要った(開発サーバーだけではない)。npm は `~/.npm` に書けず `EPERM`(「root-owned files」と出るが原因は囲い)になる。`next/font/google` の取得はプロキシを通らない。`.git/config` に書けず、`git config` と `husky` の設定はユーザに頼んだ
 
 ## フェーズ 2: 問題の生成
