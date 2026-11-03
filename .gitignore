@@ -17,6 +17,9 @@ playwright-report/
 # env
 .env*
 
+# claude code
+.claude/settings.local.json
+
 # misc
 .DS_Store
 *.tsbuildinfo

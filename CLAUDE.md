@@ -120,6 +120,13 @@ sudoku-pazzle/
 
 API 仕様書と ER 図は、API と DB を使わないので作らない。
 
+## このプロジェクトの MCP サーバと設定
+
+検討結果は [MCP_SERVERS.md](MCP_SERVERS.md)。
+
+- shadcn/ui MCP(local スコープ、`shadcn@4.22.1` に固定): UI 部品を探すときに使う。検索では `registries` に `@shadcn` を明示する。追加のコマンドは `get_add_command_for_items` で取り、`@latest` をプロジェクトで使う版に置き換えて実行する(`shadcn-tailwind.md`)
+- Vercel プラグイン: デプロイ先が Cloud Run で使わないので、`.claude/settings.local.json` で無効にしている
+
 ## 適用する技術ルール
 
 `~/Development/Rules/tech/` の次のファイル。
