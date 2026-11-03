@@ -39,21 +39,24 @@ flowchart LR
 - [x] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う(2026-11-03。更新のチェックは前回の 2026-10-24 から 2 週間たっていないので行わなかった。待ちの TODO の「ESLint 10 への更新」「TypeScript 7 への更新」は、どちらも条件を満たしていなかった(`eslint-config-next` 16.4.4、`typescript-eslint` 8.72.1 の `peerDependencies.typescript` は `>=4.8.4 <6.1.0`)。Docker を使わないので `/sandbox` は有効のまま)
   - [x] `/sandbox` で `~/.npm` に書けず npm が `EPERM` になるので、npm のコマンドには `npm_config_cache="$TMPDIR/npm-cache"` を付ける(2026-11-03 にユーザが決めた)
   - [x] 手元の bare リポジトリへの push は、`/sandbox` で止められる。2026-11-03 の push はユーザが自分のターミナルで行った
-- [ ] 技術ルール(`~/Development/Rules/tech/` の `node.md`、`npm.md`、`typescript.md`、`nextjs.md`、`react.md`、`shadcn-tailwind.md`、`vitest.md`、`eslint-prettier.md`、`husky-lint-staged.md`)を読み込む
+- [x] 技術ルール(`~/Development/Rules/tech/` の `node.md`、`npm.md`、`typescript.md`、`nextjs.md`、`react.md`、`shadcn-tailwind.md`、`vitest.md`、`eslint-prettier.md`、`husky-lint-staged.md`)を読み込む(2026-11-03)
 - [x] 専門エージェント `commit-message-writer` を作る(effort の推奨を示してユーザが決める。`~/Development/Rules/AGENTS.md`)(2026-11-03。ユーザが medium に決めた。personal-pesticide-management の定義を元にした)
 - [x] 試行中の「依存ライブラリのアップデートと破壊的変更の調査」の専門エージェントを作るかをユーザに確認し、作ると決めたら作る(2026-11-03。ユーザが作ると決めた。`dependency-update-reviewer`、effort は high。使った結果は [AGENTS_TRIAL.md](AGENTS_TRIAL.md) に記録すると決めた)
-- [ ] 新しい会話で、`commit-message-writer` と `dependency-update-reviewer` を呼べることを確かめる(2026-11-03。`commit-message-writer` は、作った会話の中で呼べるようになり、このコミットの文案に使えた。`dependency-update-reviewer` は依存の確認のときに確かめる)
+- [x] 新しい会話で、`commit-message-writer` と `dependency-update-reviewer` を呼べることを確かめる(2026-11-03。`commit-message-writer` は、作った会話の中で呼べるようになり、このコミットの文案に使えた。`dependency-update-reviewer` は依存の確認のときに確かめる。`dependency-update-reviewer` も同じ会話で呼べ、依存の確認に使えた)
 
 ### 雛形
 
 - [x] `git init` と、手元の bare リポジトリ(`~/Development/git-local/sudoku-pazzle.git`)を `origin` にする設定(2026-11-03 に済んだ。`origin/HEAD` も作成済み)
-- [ ] `.nvmrc` を `26` にする。`node -v` と比べる(`node.md`)
-- [ ] `create-next-app` を scratchpad で作って取り込む。`CLAUDE.md` は取り込まず、`AGENTS.md` はコミットする。`.gitignore` は中身を合わせる(`nextjs.md`)
-- [ ] 入った依存の公開日を確かめ、2 週間たっていない版を下げる(`npm.md`。`dependency-update-reviewer` に調べさせ、`AGENTS_TRIAL.md` に記録する)
-- [ ] ESLint と TypeScript の版を決める。待ちの TODO の「ESLint 10 への更新」「TypeScript 7 への更新」を参照する(`~/Development/Rules/TODO-waiting.md`)
-- [ ] `output: "standalone"` を設定する
-- [ ] `noindex` の meta を全ページに入れる(N-04)
-- [ ] インストール後スクリプトの承認を確かめる(`npm.md`)
+- [x] `.nvmrc` を `26` にする。`node -v` と比べる(`node.md`)(2026-11-03。シェルの `node -v` は v26.13.0(nvm の既定)で、`.nvmrc` と合っていた)
+- [x] `create-next-app` を scratchpad で作って取り込む。`CLAUDE.md` は取り込まず、`AGENTS.md` はコミットする。`.gitignore` は中身を合わせる(`nextjs.md`)(2026-11-03。`create-next-app@16.4.2`(2 週間たった安定版の最新)で、TypeScript・Tailwind CSS・ESLint・App Router・`src/`、React Compiler と Cache Components は無効(ユーザが決めた)。16.4.2 は `CLAUDE.md` を作らなかった。`README.md` はフェーズ 8 で書くので取り込まなかった。`.gitignore` には `/build/`、`*.pem`、`npm-debug.log*` だけを足した)
+  - [ ] `/sandbox` の中で動かすと、雛形を作った後に設定の保存(`~/Library/Preferences`)で `Maximum call stack size exceeded` で落ちる(雛形はできている。落ちたのは設定の保存と推測)。技術ルール `nextjs.md` に書くかを、フェーズ 1 の振り返りで提案する
+- [x] 入った依存の公開日を確かめ、2 週間たっていない版を下げる(`npm.md`。`dependency-update-reviewer` に調べさせ、`AGENTS_TRIAL.md` に記録する)(2026-11-03。ユーザが決めた: `tailwindcss` と `@tailwindcss/turbopack` を 4.3.4 から 4.3.3 に下げた(`^4.3.3`)。`react`・`react-dom` を 19.3.1、`@types/node` を 26.6.5 に上げた。`next`・`eslint-config-next` は 16.4.2 のまま)
+  - [x] `npm audit` は moderate 16 件(本番の依存は 0 件)。根は ESLint 系の中の `minimatch`(GHSA-g3hv-75wg-m249、`< 11.0.1`)だけで、ESLint 10 や各プラグインの最新版もまだ 11 未満に依存するため、上流の修正待ちとして見送る(2026-11-03 にユーザが決めた。開発用の依存だけで本番に入らず、入力はリポジトリの中のパターンだけのため)。再確認はフェーズ 2 と 7 の項目
+- [x] ESLint と TypeScript の版を決める。待ちの TODO の「ESLint 10 への更新」「TypeScript 7 への更新」を参照する(`~/Development/Rules/TODO-waiting.md`)(2026-11-03。ESLint は 9.39.5(9 系の最後。9 系は 2026-08-06 にサポート終了だが、10 は待ちの TODO の条件を満たしていない)。TypeScript は 6.0.3 にするとユーザが決めた。`tsconfig.json` は雛形のままで型チェックが通った)
+- [x] `output: "standalone"` を設定する(2026-11-03。ビルドで `.next/standalone/server.js` ができることを確かめた)
+- [x] `noindex` の meta を全ページに入れる(N-04)(2026-11-03。`src/app/layout.tsx` の `metadata.robots`。ビルドした `/` と `/_not-found` の HTML に入っていることを確かめた。あわせて `lang="ja"` とタイトルを直した)
+- [x] 雛形の Google Fonts(Geist)を外し、端末の標準のフォントにする(2026-11-03 にユーザが決めた。`src/components/CLAUDE.md` の「共通」に書いた。`/sandbox` の中では Turbopack のフォントの取得がプロキシを通らず、ビルドが失敗したため)
+- [x] インストール後スクリプトの承認を確かめる(`npm.md`)(2026-11-03。`package-lock.json` に `hasInstallScript` を持つものは 0 件で、承認するものは無かった)
 
 ### 道具
 
@@ -67,12 +70,15 @@ flowchart LR
 ### 振り返り
 
 - [ ] フェーズ内で実施した作業において、今後の開発に活かせそうなルールがないか振り返って確認し、ルールとして採用するべき項目があれば、提案する
+  - 提案の候補(2026-11-03 に出てきたもの): `/sandbox` の中では、Next.js のビルドも Turbopack の CSS の loader がローカルのポートで待ち受けるため `allowLocalBinding` が要った(開発サーバーだけではない)。npm は `~/.npm` に書けず `EPERM`(「root-owned files」と出るが原因は囲い)になる。`next/font/google` の取得はプロキシを通らない
 
 ## フェーズ 2: 問題の生成
 
 テスト仕様書の T-001〜T-009。仕様は `src/lib/CLAUDE.md` の G-01〜G-13。
 
 - [ ] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う
+- [ ] 2026-11-03 の Next.js のセキュリティリリース(medium 7 件)の影響する版を確かめ、`next` 16.4.2 が対象なら、上げるかをユーザに確認する(フェーズ 1 で決めた)
+- [ ] `npm audit` の `minimatch` の指摘(フェーズ 1 で見送った)と、ESLint 10 への更新の条件をもう一度確かめる
 - [ ] 技術ルール(`typescript.md`、`vitest.md`)を読み込む
 - [ ] 専門エージェント `unit-test-writer`、`code-reviewer`、`type-strictness-reviewer` を作る(effort の推奨を示してユーザが決める)
 
@@ -131,6 +137,7 @@ flowchart LR
 
 ### 実装(テストを先に書く)
 
+- [ ] 雛形のままの `src/app/page.tsx` と `public/` の SVG を消し、`globals.css` と画面からダークモードの指定(`prefers-color-scheme: dark`、`dark:` のクラス)を外す(ダークモードは MVP に入れない。2026-11-03 にフェーズ 1 のコミットの文案で指摘された)
 - [ ] ゲームの状態を持つ部品と、localStorage との同期(hydration の不一致を起こさない。G-83)
 - [ ] 保存できないときの知らせ(T-414)
 - [ ] ホーム: 続きから、難易度、上書きの確認、生成中、失敗(T-401〜T-403)
@@ -193,6 +200,7 @@ flowchart LR
 - [ ] Cloud Run と Artifact Registry の無料枠を、公式の情報で確かめ直す。2026-11-03 の時点で、製品ページと Firebase App Hosting のページで Cloud Run の CPU とメモリの無料枠の数値が違っていた。料金ページの本文は取得できなかった。送信データの無料枠(北米内で月 1 GiB)はドキュメントで確かめた
 - [ ] Google Cloud のプロジェクトと gcloud の名前付きの構成を作り、支払いアカウントを紐付ける。構成の名前とプロジェクト ID を `CLAUDE.md` に書く(`cloud-run.md`)
 - [ ] 最初から有効な API に料金がかからないかを確かめ、止めるかを決める
+- [ ] `npm audit`(全体と `--omit=dev`)と `next` のセキュリティの指摘をもう一度確かめる(フェーズ 1 で `minimatch` を見送り、フェーズ 2 で Next.js の 11 月の指摘を確かめる。その後に出たものも見る)
 - [ ] Node.js 26 の公開から 2 週間たった版をイメージに使う。26.13.0 は 2026-10-28 公開なので、2026-11-11 以降なら条件を満たす
 - [ ] `/security-review` の対象になる変更があるかを確かめ、あれば実行して記録する
 

@@ -5,6 +5,7 @@ node_modules/
 .next/
 out/
 next-env.d.ts
+/build/
 
 # tests
 coverage/
@@ -23,3 +24,7 @@ playwright-report/
 # misc
 .DS_Store
 *.tsbuildinfo
+*.pem
+
+# debug
+npm-debug.log*
