@@ -82,11 +82,12 @@ flowchart LR
 
 テスト仕様書の T-001〜T-009。仕様は `src/lib/CLAUDE.md` の G-01〜G-13。
 
-- [ ] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う
-- [ ] 2026-11-03 の Next.js のセキュリティリリース(medium 7 件)の影響する版を確かめ、`next` 16.4.2 が対象なら、上げるかをユーザに確認する(フェーズ 1 で決めた)
-- [ ] `npm audit` の `minimatch` と `deepmerge` の指摘(フェーズ 1 で見送った)と、ESLint 10 への更新の条件をもう一度確かめる
-- [ ] 技術ルール(`typescript.md`、`vitest.md`)を読み込む
-- [ ] 専門エージェント `unit-test-writer`、`code-reviewer`、`type-strictness-reviewer` を作る(effort の推奨を示してユーザが決める)
+- [x] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う(2026-11-03。更新のチェックは前回の 2026-10-24 から 2 週間たっていないので行わなかった。Docker を使わないので `/sandbox` は有効のまま)
+- [x] 2026-11-03 の Next.js のセキュリティリリース(medium 7 件)の影響する版を確かめ、`next` 16.4.2 が対象なら、上げるかをユーザに確認する(フェーズ 1 で決めた)(2026-11-03。勧告はまだ見つからなかった(公式は予告だけ。npm の `latest` は 11-02 公開の 16.4.4)。`npm audit` に `next` の指摘は無い。16.4.2 のまま進め、フェーズ 3 の始めに確かめ直すとユーザが決めた)
+- [x] `npm audit` の `minimatch` と `deepmerge` の指摘(フェーズ 1 で見送った)と、ESLint 10 への更新の条件をもう一度確かめる(2026-11-03。22 件(low 2、moderate 20)で、根は変わらず `minimatch`(GHSA-g3hv-75wg-m249)と `deepmerge`(GHSA-gcqx-w48m-w2h4)だけ。`--omit=dev` は 0 件。ESLint 10 は条件を満たしていない(`eslint-plugin-react` 7.37.5 が `^9.7` まで、`eslint-plugin-import` 2.32.0 と `eslint-plugin-jsx-a11y` 6.10.2 が `^9` まで)。TypeScript 7 も満たしていない(`typescript-eslint` 8.72.1 が `<6.1.0`))
+- [x] 技術ルール(`typescript.md`、`vitest.md`)を読み込む(2026-11-03)
+- [x] 専門エージェント `unit-test-writer`、`code-reviewer`、`type-strictness-reviewer` を作る(effort の推奨を示してユーザが決める)(2026-11-03。ユーザが決めた: `unit-test-writer` と `type-strictness-reviewer` は high、`code-reviewer` は xhigh、モデルは sonnet。personal-pesticide-management の定義を元にし、API・DB・認証の部分を外して、乱数の引数、手で書いた盤面の前提の確かめ、保存形式の検証、Web Worker の観点を足した)
+- [x] `unit-test-writer`、`code-reviewer`、`type-strictness-reviewer` を呼べることを確かめる(2026-11-03。作った会話の中で、エージェントの一覧に 3 つが出た)
 
 ### 実装(テストを先に書く)
 
@@ -112,6 +113,7 @@ flowchart LR
 テスト仕様書の T-101〜T-303。仕様は `src/lib/CLAUDE.md` の G-21〜G-83。
 
 - [ ] `phase-start-check` スキルで、開発ツールの更新のチェックと、待ちの TODO の条件の確認を行う
+- [ ] Next.js の 2026-11-03 のセキュリティリリース(medium 7 件)の勧告を確かめ、`next` 16.4.2 が対象なら、上げるか(公開から 2 週間たっていない版になるかも含めて)をユーザに確認する(2026-11-03 のフェーズ 2 の始めに、勧告がまだ見つからず、ユーザがここで確かめると決めた)
 - [ ] 技術ルール(`typescript.md`、`vitest.md`)を読み込む
 
 ### 実装(テストを先に書く)
