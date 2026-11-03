@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+
+import { GameProvider } from "@/components/game-provider";
+import { StorageNotice } from "@/components/storage-notice";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,7 +15,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ja" className="h-full antialiased">
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col bg-gray-50 text-gray-900">
+        <GameProvider>
+          <StorageNotice />
+          {children}
+        </GameProvider>
+      </body>
     </html>
   );
 }
