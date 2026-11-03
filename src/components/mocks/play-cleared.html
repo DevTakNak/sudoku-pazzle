@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ゲーム(クリア) - 数独パズル</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">@layer base { *, ::after, ::before, ::backdrop, ::file-selector-button { border-color: var(--color-gray-200, currentColor); } }</style>
+    <script src="mock.js"></script>
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900">
+    <div id="root"></div>
+    <script>
+      const root = document.getElementById("root");
+      renderPlay(root, { disabled: true });
+      root.insertAdjacentHTML(
+        "beforeend",
+        dialogHtml({
+          title: "クリア!",
+          body: "かんたんをクリアしました。",
+          content: `
+            <dl class="mt-4 grid grid-cols-2 gap-y-1 text-sm">
+              <dt class="text-gray-600">タイム</dt><dd class="text-right tabular-nums">12:34</dd>
+              <dt class="text-gray-600">間違い</dt><dd class="text-right">1 回</dd>
+              <dt class="text-gray-600">ベストタイム</dt><dd class="text-right tabular-nums">12:34</dd>
+            </dl>
+            <p class="mt-3 text-sm font-bold text-blue-700">ベストタイムを更新しました!</p>`,
+          buttons: [{ label: "成績を見る" }, { label: "新しいゲーム", primary: true }],
+        }),
+      );
+    </script>
+  </body>
+</html>

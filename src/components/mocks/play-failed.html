@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ゲーム(失敗) - 数独パズル</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">@layer base { *, ::after, ::before, ::backdrop, ::file-selector-button { border-color: var(--color-gray-200, currentColor); } }</style>
+    <script src="mock.js"></script>
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900">
+    <div id="root"></div>
+    <script>
+      const root = document.getElementById("root");
+      renderPlay(root, { disabled: true, mistakes: 3 });
+      root.insertAdjacentHTML(
+        "beforeend",
+        dialogHtml({
+          title: "失敗しました",
+          body: "間違いが 3 回になりました。",
+          buttons: [{ label: "新しいゲーム" }, { label: "やり直す", primary: true }],
+        }),
+      );
+    </script>
+  </body>
+</html>

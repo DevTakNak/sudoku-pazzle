@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>成績 - 数独パズル</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">@layer base { *, ::after, ::before, ::backdrop, ::file-selector-button { border-color: var(--color-gray-200, currentColor); } }</style>
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900">
+    <main class="mx-auto w-full max-w-xl px-4 py-6">
+      <a href="#" class="flex h-11 w-fit items-center font-medium text-blue-700 underline">ホーム</a>
+      <h1 class="mt-2 text-2xl font-bold">成績</h1>
+      <table class="mt-4 w-full table-fixed border-collapse rounded-lg bg-white text-xs sm:text-sm">
+        <thead>
+          <tr class="border-b text-gray-600">
+            <th scope="col" class="w-[28%] px-1 py-3 text-left font-medium sm:px-3">難易度</th>
+            <th scope="col" class="px-1 py-3 text-right font-medium sm:px-3">クリア</th>
+            <th scope="col" class="px-1 py-3 text-right font-medium sm:px-3">失敗</th>
+            <th scope="col" class="px-1 py-3 text-right font-medium sm:px-3">クリア率</th>
+            <th scope="col" class="w-[22%] px-1 py-3 text-right font-medium sm:px-3">ベストタイム</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b">
+            <th scope="row" class="px-1 py-3 text-left font-medium sm:px-3">かんたん</th>
+            <td class="px-1 py-3 text-right sm:px-3">12</td>
+            <td class="px-1 py-3 text-right sm:px-3">3</td>
+            <td class="px-1 py-3 text-right sm:px-3">80%</td>
+            <td class="px-1 py-3 text-right tabular-nums sm:px-3">05:21</td>
+          </tr>
+          <tr class="border-b">
+            <th scope="row" class="px-1 py-3 text-left font-medium sm:px-3">ふつう</th>
+            <td class="px-1 py-3 text-right sm:px-3">2</td>
+            <td class="px-1 py-3 text-right sm:px-3">1</td>
+            <td class="px-1 py-3 text-right sm:px-3">67%</td>
+            <td class="px-1 py-3 text-right tabular-nums sm:px-3">14:08</td>
+          </tr>
+          <tr>
+            <th scope="row" class="px-1 py-3 text-left font-medium sm:px-3">むずかしい</th>
+            <td class="px-1 py-3 text-right sm:px-3">0</td>
+            <td class="px-1 py-3 text-right sm:px-3">0</td>
+            <td class="px-1 py-3 text-right sm:px-3">-</td>
+            <td class="px-1 py-3 text-right tabular-nums sm:px-3">-</td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+  </body>
+</html>

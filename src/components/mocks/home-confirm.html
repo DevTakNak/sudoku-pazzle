@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ホーム(上書きの確認) - 数独パズル</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">@layer base { *, ::after, ::before, ::backdrop, ::file-selector-button { border-color: var(--color-gray-200, currentColor); } }</style>
+    <script src="mock.js"></script>
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900">
+    <div id="root"></div>
+    <script>
+      renderHome(document.getElementById("root"), {
+        dialog: {
+          title: "新しいゲームを始めますか?",
+          body: "進行中のゲームは消え、成績にも記録されません。",
+          buttons: [{ label: "キャンセル" }, { label: "始める", primary: true }],
+        },
+      });
+    </script>
+  </body>
+</html>
