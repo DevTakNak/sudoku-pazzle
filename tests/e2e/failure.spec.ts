@@ -9,6 +9,7 @@ import {
   readPuzzleAndSolution,
   startNewGame,
   timerSeconds,
+  wrongDigit,
 } from "./support";
 
 test("T-502: 間違いを 3 回入れて失敗し、「やり直す」で同じ問題が初めの状態に戻り、「新しいゲーム」でホームに戻る", async ({
@@ -20,25 +21,25 @@ test("T-502: 間違いを 3 回入れて失敗し、「やり直す」で同じ�
   await startNewGame(page, "かんたん");
 
   const initialLabels = await readLabels(page);
-  const { cells, solution } = await readPuzzleAndSolution(page);
+  const { cells, puzzle, solution } = await readPuzzleAndSolution(page);
   const blanks = cells.filter((c) => c.kind === "empty").map((c) => c.index);
 
   // 間違いを 1 回、2 回と入れる。誤りの数字は「誤り」と読み上げられ、回数が増える
   await mistakesLocator(page, 0).waitFor();
-  await player.enterWrong(blanks[0]!, solution);
+  await player.enterWrong(blanks[0]!, solution, puzzle);
   await expect(mistakesLocator(page, 1)).toBeVisible();
   await expect(player.cell(blanks[0]!)).toHaveAttribute(
     "aria-label",
-    cellLabel(blanks[0]!, `${(solution[blanks[0]!]! % 9) + 1}、誤り`),
+    cellLabel(blanks[0]!, `${wrongDigit(blanks[0]!, solution, puzzle)}、誤り`),
   );
-  await player.enterWrong(blanks[1]!, solution);
+  await player.enterWrong(blanks[1]!, solution, puzzle);
   await expect(mistakesLocator(page, 2)).toBeVisible();
   await expect(page.getByRole("alertdialog")).toHaveCount(0);
 
   // 3 回目の前に、時間が進んでいることを確かめる(「やり直す」で戻ることを確かめるため)
   await expect.poll(() => timerSeconds(page)).toBeGreaterThanOrEqual(2);
   const secondsBeforeFailure = await timerSeconds(page);
-  await player.enterWrong(blanks[2]!, solution);
+  await player.enterWrong(blanks[2]!, solution, puzzle);
 
   const dialog = page.getByRole("alertdialog");
   await expect(dialog).toBeVisible();
@@ -58,9 +59,9 @@ test("T-502: 間違いを 3 回入れて失敗し、「やり直す」で同じ�
   await expect(player.button("やり直し")).toBeDisabled();
 
   // 同じ問題でもう一度失敗し、「新しいゲーム」でホームに戻る
-  await player.enterWrong(blanks[3]!, solution);
-  await player.enterWrong(blanks[4]!, solution);
-  await player.enterWrong(blanks[5]!, solution);
+  await player.enterWrong(blanks[3]!, solution, puzzle);
+  await player.enterWrong(blanks[4]!, solution, puzzle);
+  await player.enterWrong(blanks[5]!, solution, puzzle);
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText("失敗しました");
   await dialog

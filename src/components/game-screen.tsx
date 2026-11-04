@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
+import { completedDigits } from "@/lib/game/digits";
 import { redo, undo } from "@/lib/game/history";
 import { eraseCell, inputDigit } from "@/lib/game/input";
 import { toggleNote } from "@/lib/game/notes";
@@ -86,11 +87,13 @@ export function GameScreen() {
 
   function enterDigit(digit: number) {
     if (selected === null) return;
-    store.updateGame((g) =>
-      noteMode
+    store.updateGame((g) => {
+      // 入れ終わった数字は、メモの状態でも何もしない(G-27)
+      if (completedDigits(g).has(digit)) return g;
+      return noteMode
         ? toggleNote(g, selected, digit)
-        : inputDigit(g, selected, digit),
-    );
+        : inputDigit(g, selected, digit);
+    });
   }
 
   function erase() {
@@ -210,6 +213,7 @@ export function GameScreen() {
             onErase={erase}
             onToggleNoteMode={() => setNoteMode((m) => !m)}
             onDigit={enterDigit}
+            completed={completedDigits(game)}
           />
         </div>
         <EndDialog
@@ -270,6 +274,7 @@ function Controls({
   onErase,
   onToggleNoteMode,
   onDigit,
+  completed,
 }: {
   disabled: boolean;
   canUndo: boolean;
@@ -280,6 +285,7 @@ function Controls({
   onErase: () => void;
   onToggleNoteMode: () => void;
   onDigit: (digit: number) => void;
+  completed: Set<number>;
 }) {
   const action =
     "h-12 min-w-0 rounded-lg border bg-white px-1 text-sm font-medium disabled:opacity-40";
@@ -325,9 +331,19 @@ function Controls({
           <button
             key={digit}
             type="button"
-            disabled={disabled}
+            disabled={disabled || completed.has(digit)}
             onClick={() => onDigit(digit)}
-            className="h-12 rounded-lg border bg-white text-xl font-medium disabled:opacity-40 md:h-16"
+            className={cn(
+              "h-12 rounded-lg border bg-white text-xl font-medium md:h-16",
+              // 入れ終わった数字は、不透明な灰色にする(どの数字か読めるように)。
+              // 一時停止中などのほかの押せない状態だけ薄くする
+              completed.has(digit)
+                ? cn(
+                    "border-gray-200 bg-gray-200 text-gray-400",
+                    disabled && "opacity-40",
+                  )
+                : "disabled:opacity-40",
+            )}
           >
             {digit}
           </button>

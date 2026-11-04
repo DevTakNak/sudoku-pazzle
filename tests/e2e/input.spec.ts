@@ -6,7 +6,9 @@ import {
   cellLabel,
   mistakesLocator,
   readPuzzleAndSolution,
+  openDigits,
   startNewGame,
+  wrongDigit,
 } from "./support";
 
 // 盤面を操作する方法。PC はキーボードだけ、スマホは画面のボタンだけで同じ操作をする
@@ -74,7 +76,7 @@ async function playThrough(
 ): Promise<void> {
   await page.goto("/");
   await startNewGame(page, "かんたん");
-  const { cells, solution } = await readPuzzleAndSolution(page);
+  const { cells, puzzle, solution } = await readPuzzleAndSolution(page);
   const blanks = cells.filter((c) => c.kind === "empty").map((c) => c.index);
   const clue = cells.find((c) => c.kind === "clue")!;
   const [a, b, c] = blanks as [number, number, number];
@@ -90,7 +92,10 @@ async function playThrough(
   await expect(mistakesLocator(page, 0)).toBeVisible();
 
   // 誤りの数字を入れると、誤りと読み上げられて回数が増え、消すと空欄に戻る(回数は減らない)
-  const wrong = (solution[b]! % 9) + 1;
+  // 正解を入れた後の盤面で、入れ終わっていない数字を選ぶ
+  const values = puzzle.map((v, i) => (i === a ? solution[i]! : v));
+  const wrong = wrongDigit(b, solution, values);
+  const [note1, note2] = openDigits(solution, values) as [number, number];
   await input.select(b);
   await input.digit(wrong);
   await expect(player.cell(b)).toHaveAttribute(
@@ -107,7 +112,7 @@ async function playThrough(
 
   // 手がかりのマスには入れられない
   await input.select(clue.index);
-  await input.digit((clue.value % 9) + 1);
+  await input.digit(wrongDigit(clue.index, solution, values));
   await expect(player.cell(clue.index)).toHaveAttribute(
     "aria-label",
     cellLabel(clue.index, `${clue.value}、手がかり`),
@@ -119,16 +124,16 @@ async function playThrough(
   await input.toggleNote();
   await expect(noteButton).toHaveAttribute("aria-pressed", "true");
   await input.select(c);
-  await input.digit(3);
-  await input.digit(7);
+  await input.digit(note1);
+  await input.digit(note2);
   await expect(player.cell(c)).toHaveAttribute(
     "aria-label",
-    cellLabel(c, "メモ 3 7"),
+    cellLabel(c, `メモ ${note1} ${note2}`),
   );
-  await input.digit(3);
+  await input.digit(note1);
   await expect(player.cell(c)).toHaveAttribute(
     "aria-label",
-    cellLabel(c, "メモ 7"),
+    cellLabel(c, `メモ ${note2}`),
   );
   await expect(mistakesLocator(page, 1)).toBeVisible();
 
@@ -136,12 +141,12 @@ async function playThrough(
   await input.undo();
   await expect(player.cell(c)).toHaveAttribute(
     "aria-label",
-    cellLabel(c, "メモ 3 7"),
+    cellLabel(c, `メモ ${note1} ${note2}`),
   );
   await input.redo();
   await expect(player.cell(c)).toHaveAttribute(
     "aria-label",
-    cellLabel(c, "メモ 7"),
+    cellLabel(c, `メモ ${note2}`),
   );
   await expect(mistakesLocator(page, 1)).toBeVisible();
 

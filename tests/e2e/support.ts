@@ -143,6 +143,39 @@ export function solve(puzzle: readonly number[]): {
 
 // ---- 画面の操作 ----
 
+// 入れ終わった数字(G-27)は、ボタンもキーも効かない。
+// 生成した問題では、ある数字が初めから 9 か所とも手がかりのことがあるので、
+// 入れる数字は values で入れ終わっていない数字から選ぶ。
+// values は、その時点の盤面(誤りの数字は数えないので、誤りだけを入れた流れなら問題の盤面でよい)
+function isOpen(
+  digit: number,
+  solution: readonly number[],
+  values: readonly number[],
+): boolean {
+  return values.filter((v, i) => v === digit && v === solution[i]).length < 9;
+}
+
+// 入れ終わっていない数字(昇順)
+export function openDigits(
+  solution: readonly number[],
+  values: readonly number[],
+): number[] {
+  return [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => isOpen(d, solution, values));
+}
+
+// マスに入れる誤りの数字(解と違い、入れ終わっていない数字)
+export function wrongDigit(
+  index: number,
+  solution: readonly number[],
+  values: readonly number[],
+): number {
+  for (let k = 1; k <= 8; k++) {
+    const digit = ((solution[index]! - 1 + k) % 9) + 1;
+    if (isOpen(digit, solution, values)) return digit;
+  }
+  throw new Error(`マス ${index} に入れられる誤りの数字が無い`);
+}
+
 // 盤面を読んで解を求める。解が 1 つだけであることも確かめる(R-02)
 export async function readPuzzleAndSolution(page: Page): Promise<{
   cells: CellInfo[];
@@ -227,9 +260,14 @@ export class Player {
     return blanks.slice(blanks.length - skipLast);
   }
 
-  // 解と違う数字(解の次の数字)を入れる
-  async enterWrong(index: number, solution: readonly number[]): Promise<void> {
-    await this.enterByButtons(index, (solution[index]! % 9) + 1);
+  // 解と違う数字を入れる。解の次の数字から順に、入れ終わった数字(G-27)を飛ばして選ぶ。
+  // values はその時点の盤面(isOpen の説明)
+  async enterWrong(
+    index: number,
+    solution: readonly number[],
+    values: readonly number[],
+  ): Promise<void> {
+    await this.enterByButtons(index, wrongDigit(index, solution, values));
   }
 }
 

@@ -5,7 +5,8 @@ const PUZZLE = "5300700006001950000980000608000600034008030017000200060600002800
 // 入力したマス: { インデックス: 数字 }。誤りの数字は solution と違う値になる
 const ENTERED = { 2: 4, 10: 7, 18: 5 };
 // メモ: { インデックス: [数字] }
-const NOTES = { 3: [2, 6], 5: [2, 6, 8] };
+// 28 の 5 のメモは、選んだマス(誤りの 5)と同じ数字として強調する
+const NOTES = { 3: [2, 6], 5: [2, 6, 8], 28: [2, 5] };
 const SELECTED = 18;
 
 const rowOf = (i) => Math.floor(i / 9);
@@ -54,23 +55,38 @@ function renderBoard(el, { hidden = false } = {}) {
         : wrong
           ? "font-medium text-red-700 underline underline-offset-2"
           : "font-medium text-blue-700";
+      // 選んだマスと同じ数字のメモは、太字・青・丸で強調する
+      const noteClass = (n) =>
+        n === valueAt(SELECTED) ? "rounded-full bg-blue-200 font-bold text-blue-800" : "";
       const body = value
         ? `<span class="text-lg sm:text-2xl ${text}">${value}</span>`
         : `<span class="grid h-full w-full grid-cols-3 p-px text-[8px] leading-none text-gray-500 sm:text-[10px]">${[1, 2, 3, 4, 5, 6, 7, 8, 9]
-            .map((n) => `<span class="flex items-center justify-center">${notes.includes(n) ? n : ""}</span>`)
+            .map((n) => `<span class="flex items-center justify-center ${notes.includes(n) ? noteClass(n) : ""}">${notes.includes(n) ? n : ""}</span>`)
             .join("")}</span>`;
       return `<div role="gridcell" class="flex aspect-square min-w-0 items-center justify-center ${right} ${bottom} ${bg} ${ring}">${body}</div>`;
     })
     .join("");
 }
 
+// 9 か所すべてに正解が入った数字
+function completedDigits() {
+  return [1, 2, 3, 4, 5, 6, 7, 8, 9].filter(
+    (n) => [...Array(81).keys()].filter((i) => valueAt(i) === n && !isWrong(i)).length === 9,
+  );
+}
+
 function renderControls(el, { disabled = false, noteMode = false } = {}) {
+  const completed = completedDigits();
   const state = disabled ? "disabled" : "";
   const dim = disabled ? "opacity-40" : "";
   const action = (label, extra = "bg-white") =>
     `<button ${state} class="h-12 min-w-0 rounded-lg border px-1 text-sm font-medium ${dim} ${extra}">${label}</button>`;
   const digits = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    .map((n) => `<button ${state} class="h-12 rounded-lg border bg-white text-xl font-medium md:h-16 ${dim}">${n}</button>`)
+    .map((n) =>
+      completed.includes(n)
+        ? `<button disabled class="h-12 rounded-lg border border-gray-200 bg-gray-200 text-xl font-medium text-gray-400 md:h-16 ${dim}">${n}</button>`
+        : `<button ${state} class="h-12 rounded-lg border bg-white text-xl font-medium md:h-16 ${dim}">${n}</button>`,
+    )
     .join("");
   el.innerHTML = `
     <div class="grid grid-cols-4 gap-2 md:grid-cols-2">
@@ -121,7 +137,13 @@ function renderHome(root, { showContinue = true, generating = false, dialog = nu
 }
 
 // noteMode: メモの状態(背景を薄い黄色にし、「メモ入力中」を出す)
-function renderPlay(root, { hidden = false, disabled = false, mistakes = 1, time = "12:34", pauseLabel = "一時停止", noteMode = false } = {}) {
+// completeDigit: その数字の空欄をすべて正解で埋める(入れ終わった数字のボタンを見せる)
+function renderPlay(root, { hidden = false, disabled = false, mistakes = 1, time = "12:34", pauseLabel = "一時停止", completeDigit = 0, noteMode = false } = {}) {
+  if (completeDigit) {
+    for (const i of Array(81).keys()) {
+      if (Number(SOLUTION[i]) === completeDigit && Number(PUZZLE[i]) === 0) ENTERED[i] = completeDigit;
+    }
+  }
   root.innerHTML = `
     <main class="w-full flex-1 ${noteMode ? "bg-yellow-100" : ""}">
     <div class="mx-auto w-full max-w-4xl px-4 py-4">

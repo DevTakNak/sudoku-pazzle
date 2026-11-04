@@ -7,6 +7,9 @@ import { toggleNote } from "@/lib/game/notes";
 import {
   BLANK_A,
   BLANK_B,
+  BOX_PEER,
+  OUTSIDE,
+  ROW_PEER,
   SOLUTION_A,
   entry,
   freshGame,
@@ -14,6 +17,7 @@ import {
   withNotes,
   withValues,
 } from "../../../helpers/game";
+import { UNIQUE_SOLUTION } from "../../../helpers/grid";
 
 const WRONG = 1; // マス 2(BLANK_A)の解は 4
 
@@ -265,5 +269,44 @@ describe("T-125: 元に戻した正解のマス", () => {
   it("T-125: 元に戻して正解のマスが空欄に戻ると、消すは何も変えない", () => {
     const undone = undo(inputDigit(freshGame(), BLANK_A, SOLUTION_A));
     expect(eraseCell(undone, BLANK_A)).toBe(undone);
+  });
+});
+
+describe("T-126: 自動で消えたメモの元に戻す・やり直し", () => {
+  it("T-126: 元に戻す 1 回で、入力と消えたメモが一緒に戻り、やり直しで再び消える", () => {
+    // 同じ行(ROW_PEER)と同じブロック(BOX_PEER)のメモの 4 が消える
+    const before = withNotes(freshGame(), {
+      [BLANK_A]: [4, 7],
+      [ROW_PEER]: [4, 6],
+      [BOX_PEER]: [4, 7],
+    });
+    const after = inputDigit(before, BLANK_A, SOLUTION_A);
+    expect(after.notes[ROW_PEER]).toEqual([6]);
+    expect(after.notes[BOX_PEER]).toEqual([7]);
+
+    const undone = undo(after);
+    expect({ ...undone, redoStack: [] }).toEqual(before);
+
+    const redone = redo(undone);
+    expect(redone).toEqual(after);
+  });
+});
+
+describe("T-127: 入れ終わったときに消えたメモの元に戻す・やり直し", () => {
+  it("T-127: 元に戻す 1 回で、9 か所目の入力と、行・列・ブロックの外で消えたメモが一緒に戻る", () => {
+    // 4 のマスを、マス 2(BLANK_A)を除いて解のとおりに埋める
+    const changes: Record<number, number> = {};
+    UNIQUE_SOLUTION.forEach((v, i) => {
+      if (v === 4 && i !== BLANK_A) changes[i] = 4;
+    });
+    const before = withNotes(withValues(freshGame(), changes), {
+      [OUTSIDE]: [4, 5],
+    });
+    const after = inputDigit(before, BLANK_A, SOLUTION_A);
+    expect(after.notes[OUTSIDE]).toEqual([5]);
+
+    const undone = undo(after);
+    expect({ ...undone, redoStack: [] }).toEqual(before);
+    expect(redo(undone)).toEqual(after);
   });
 });

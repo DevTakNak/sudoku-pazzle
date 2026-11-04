@@ -11,6 +11,7 @@ import type { Difficulty } from "@/lib/sudoku/grid";
 
 import {
   BLANK_A,
+  BLANK_B,
   almostSolved,
   clearedGame,
   failedGame,
@@ -527,15 +528,22 @@ describe("T-411: その場でクリアしたとき", () => {
     expect(savedStats()!.easy.cleared).toBe(4);
   });
 
-  it("T-411: 最後のマスに誤りの数字を入れても、クリアにならずダイアログも出ない", async () => {
-    seedGame(almostCleared());
+  it("T-411: 誤りの数字が残ったまま最後の空欄を埋めても、クリアにならずダイアログも出ない", async () => {
+    // idx 2(解は 4)と idx 3(解は 6)が空欄。ほかの数字はすべて入れ終わっていて
+    // 入れられない(T-418)ので、まだ入れ終わっていない 6 を誤りとして idx 2 に入れる
+    seedGame({ ...almostSolved([BLANK_A, BLANK_B]), mistakes: 1 });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderScreen(<GameScreen />);
     await resume(user);
     await selectCell(user, BLANK_A);
+    await user.keyboard("6");
+    expect(mistakesText()).toBe("間違い 2/3");
 
-    await user.keyboard("1");
+    await selectCell(user, BLANK_B);
+    await user.keyboard("6");
 
+    // すべてのマスが埋まったが、idx 2 は誤りのまま
+    expect(savedGame()!.values.every((v) => v !== 0)).toBe(true);
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(mistakesText()).toBe("間違い 2/3");
     expect(savedGame()!.status).toBe("playing");

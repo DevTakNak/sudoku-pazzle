@@ -9,8 +9,12 @@ import {
   BLANK_B,
   BLANK_C,
   BLANK_D,
+  BOX_PEER,
   CLUE_INDEX,
+  COL_PEER,
   EDGE_PUZZLE,
+  OUTSIDE,
+  ROW_PEER,
   SOLUTION_A,
   SOLUTION_B,
   SOLUTION_C,
@@ -79,7 +83,7 @@ describe("inputDigit", () => {
       expect(next.status).toBe("playing");
     });
 
-    it("T-101: ほかのマスの数字とメモは変わらない", () => {
+    it("T-101: ほかのマスの数字と、入れた数字を含まないメモは変わらない(含むメモは T-113)", () => {
       const state = withNotes(freshGame(), {
         [BLANK_A]: [1, 4, 7],
         [BLANK_B]: [2, 5],
@@ -365,5 +369,171 @@ describe("eraseCell", () => {
       emptyNotes().map((_, i) => (i === BLANK_B ? [2] : [])),
     );
     expect(next.values).toEqual(UNIQUE_PUZZLE);
+  });
+});
+
+describe("T-113: 正解を入れたときのメモの自動の消去", () => {
+  it("T-113: 前提(メモを置くマスは空欄で、行・列・ブロックの関係が名前のとおり)", () => {
+    for (const i of [ROW_PEER, BOX_PEER, COL_PEER, OUTSIDE]) {
+      expect(UNIQUE_PUZZLE[i]).toBe(0);
+      expect(UNIQUE_SOLUTION[i]).not.toBe(SOLUTION_A);
+    }
+    // 本番の PEERS を使わず、行・列・ブロックの番号を計算して確かめる
+    const row = (i: number) => Math.floor(i / 9);
+    const col = (i: number) => i % 9;
+    const box = (i: number) =>
+      Math.floor(row(i) / 3) * 3 + Math.floor(col(i) / 3);
+    const relation = (i: number) => [
+      row(i) === row(BLANK_A),
+      col(i) === col(BLANK_A),
+      box(i) === box(BLANK_A),
+    ];
+    expect(relation(ROW_PEER)).toEqual([true, false, false]);
+    expect(relation(BOX_PEER)).toEqual([false, false, true]);
+    expect(relation(COL_PEER)).toEqual([false, true, false]);
+    expect(relation(OUTSIDE)).toEqual([false, false, false]);
+  });
+
+  function notedGame() {
+    return withNotes(freshGame(), {
+      [BLANK_A]: [1, 4],
+      [ROW_PEER]: [1, 4, 6],
+      [BOX_PEER]: [4, 7],
+      [COL_PEER]: [1, 4],
+      [OUTSIDE]: [4, 5],
+    });
+  }
+
+  it("T-113: 同じ行・列・ブロックのメモからその数字だけが消え、外のメモは残る", () => {
+    const next = inputDigit(notedGame(), BLANK_A, SOLUTION_A);
+    expect(next.values[BLANK_A]).toBe(SOLUTION_A);
+    expect(next.notes[BLANK_A]).toEqual([]);
+    expect(next.notes[ROW_PEER]).toEqual([1, 6]);
+    expect(next.notes[BOX_PEER]).toEqual([7]);
+    expect(next.notes[COL_PEER]).toEqual([1]);
+    expect(next.notes[OUTSIDE]).toEqual([4, 5]);
+    expect(next.mistakes).toBe(0);
+  });
+
+  it("T-113: 消したメモは入力と 1 つの操作として履歴に残る", () => {
+    const state = notedGame();
+    const next = inputDigit(state, BLANK_A, SOLUTION_A);
+    expect(next.undoStack).toHaveLength(1);
+    const { before, after } = next.undoStack[0]!;
+    const byIndex = (cells: typeof before) =>
+      Object.fromEntries(cells.map((c) => [c.index, c]));
+    expect(byIndex(before)).toEqual({
+      [BLANK_A]: snapshot(BLANK_A, 0, [1, 4]),
+      [ROW_PEER]: snapshot(ROW_PEER, 0, [1, 4, 6]),
+      [BOX_PEER]: snapshot(BOX_PEER, 0, [4, 7]),
+      [COL_PEER]: snapshot(COL_PEER, 0, [1, 4]),
+    });
+    expect(byIndex(after)).toEqual({
+      [BLANK_A]: snapshot(BLANK_A, SOLUTION_A, []),
+      [ROW_PEER]: snapshot(ROW_PEER, 0, [1, 6]),
+      [BOX_PEER]: snapshot(BOX_PEER, 0, [7]),
+      [COL_PEER]: snapshot(COL_PEER, 0, [1]),
+    });
+    // 消すメモが無いときは、入力したマスだけが履歴に残る
+    const plain = inputDigit(freshGame(), BLANK_A, SOLUTION_A);
+    expect(plain.undoStack).toEqual([
+      entry(snapshot(BLANK_A, 0, []), snapshot(BLANK_A, SOLUTION_A, [])),
+    ]);
+  });
+
+  it("T-113: 誤りの数字を入れたときは、ほかのマスのメモを消さない", () => {
+    const state = notedGame();
+    const next = inputDigit(state, BLANK_A, WRONG);
+    expect(next.values[BLANK_A]).toBe(WRONG);
+    expect(next.notes[BLANK_A]).toEqual([]);
+    expect(next.notes[ROW_PEER]).toEqual([1, 4, 6]);
+    expect(next.notes[COL_PEER]).toEqual([1, 4]);
+    expect(next.undoStack).toEqual([
+      entry(snapshot(BLANK_A, 0, [1, 4]), snapshot(BLANK_A, WRONG, [])),
+    ]);
+  });
+});
+
+describe("T-114: 数字が入れ終わったときのメモの消去", () => {
+  // 解で 4 が入るマス(9 か所。手がかり 2 か所を含む)
+  const FOURS = UNIQUE_SOLUTION.flatMap((v, i) => (v === 4 ? [i] : []));
+  // 4 のマスを、except を除いて解のとおりに埋めた状態
+  function fours(except: number[]) {
+    const changes: Record<number, number> = {};
+    for (const i of FOURS) if (!except.includes(i)) changes[i] = 4;
+    return withValues(freshGame(), changes);
+  }
+  const row = (i: number) => Math.floor(i / 9);
+  const col = (i: number) => i % 9;
+  const box = (i: number) =>
+    Math.floor(row(i) / 3) * 3 + Math.floor(col(i) / 3);
+  const apart = (a: number, b: number) =>
+    row(a) !== row(b) && col(a) !== col(b) && box(a) !== box(b);
+  // マス 2(BLANK_A)と行・列・ブロックが重ならない、手がかりでない 4 のマス
+  const FAR_FOUR = FOURS.find(
+    (i) => UNIQUE_PUZZLE[i] === 0 && apart(i, BLANK_A),
+  )!;
+
+  it("T-114: 前提(4 は 9 か所で、マス 2 と OUTSIDE と FAR_FOUR は、互いに行・列・ブロックが重ならない)", () => {
+    expect(FOURS).toHaveLength(9);
+    expect(FOURS).toContain(BLANK_A);
+    expect(FAR_FOUR).toBeDefined();
+    expect(UNIQUE_PUZZLE[FAR_FOUR]).toBe(0);
+    expect(apart(BLANK_A, OUTSIDE)).toBe(true);
+    expect(apart(BLANK_A, FAR_FOUR)).toBe(true);
+    expect(UNIQUE_SOLUTION[OUTSIDE]).not.toBe(4);
+  });
+
+  it("T-114: 9 か所目の正解を入れると、行・列・ブロックの外のマスのメモからもその数字が消え、ほかの数字のメモは残る", () => {
+    const before = withNotes(fours([BLANK_A]), {
+      [OUTSIDE]: [4, 5],
+      [ROW_PEER]: [4, 6],
+    });
+    const after = inputDigit(before, BLANK_A, SOLUTION_A);
+    expect(after.notes[OUTSIDE]).toEqual([5]);
+    expect(after.notes[ROW_PEER]).toEqual([6]);
+    expect(after.notes.every((n) => !n.includes(4))).toBe(true);
+    expect(after.mistakes).toBe(0);
+  });
+
+  it("T-114: 消したメモは入力と 1 つの操作として履歴に残る", () => {
+    // 入力するマス自身のメモ(4 を含む)は、入力で消える(G-21)。消すメモの対象に重ねて入れない
+    const before = withNotes(fours([BLANK_A]), {
+      [BLANK_A]: [4, 7],
+      [OUTSIDE]: [4, 5],
+    });
+    const after = inputDigit(before, BLANK_A, SOLUTION_A);
+    expect(after.values[BLANK_A]).toBe(SOLUTION_A);
+    expect(after.notes[BLANK_A]).toEqual([]);
+    expect(after.undoStack).toHaveLength(1);
+    expect(after.undoStack[0]).toEqual({
+      before: [snapshot(BLANK_A, 0, [4, 7]), snapshot(OUTSIDE, 0, [4, 5])],
+      after: [snapshot(BLANK_A, SOLUTION_A, []), snapshot(OUTSIDE, 0, [5])],
+    });
+  });
+
+  it("T-114: 8 か所目の正解では、行・列・ブロックの外のメモは残る", () => {
+    const before = withNotes(fours([BLANK_A, FAR_FOUR]), { [OUTSIDE]: [4, 5] });
+    const after = inputDigit(before, BLANK_A, SOLUTION_A);
+    expect(after.notes[OUTSIDE]).toEqual([4, 5]);
+  });
+
+  it("T-114: 誤りの同じ数字は数えない(7 か所の正解と誤り 1 つの後に 8 か所目の正解を入れても、外のメモは残る)", () => {
+    // ROW_PEER(解は 6)に誤りの 4 を置いた状態で、マス 2 に 8 か所目の正解の 4 を入れる
+    const before = withNotes(
+      withValues(fours([BLANK_A, FAR_FOUR]), { [ROW_PEER]: 4 }),
+      { [OUTSIDE]: [4, 5] },
+    );
+    const after = inputDigit(before, BLANK_A, SOLUTION_A);
+    expect(after.values.filter((v) => v === 4)).toHaveLength(9);
+    expect(after.notes[OUTSIDE]).toEqual([4, 5]);
+  });
+
+  it("T-114: 8 か所の正解と別のマスの誤りの同じ数字で 9 か所になっても、メモは消えない", () => {
+    // ROW_PEER(解は 6)に誤りの 4 を入れて、4 が 9 か所になる
+    const before = withNotes(fours([BLANK_A]), { [OUTSIDE]: [4, 5] });
+    const after = inputDigit(before, ROW_PEER, 4);
+    expect(after.values.filter((v) => v === 4)).toHaveLength(9);
+    expect(after.notes[OUTSIDE]).toEqual([4, 5]);
   });
 });

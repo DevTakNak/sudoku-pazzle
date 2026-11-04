@@ -7,7 +7,7 @@
 | パス | 画面 | モック |
 | --- | --- | --- |
 | `/` | ホーム | [home.html](mocks/home.html)(続きあり)、[home-confirm.html](mocks/home-confirm.html)(上書きの確認)、[home-generating.html](mocks/home-generating.html)(問題を作っている)、[home-error.html](mocks/home-error.html)(作れなかった) |
-| `/play` | ゲーム | [play.html](mocks/play.html)(プレイ中)、[play-paused.html](mocks/play-paused.html)(一時停止)、[play-note-mode.html](mocks/play-note-mode.html)(メモの状態)、[play-cleared.html](mocks/play-cleared.html)(クリア)、[play-failed.html](mocks/play-failed.html)(失敗) |
+| `/play` | ゲーム | [play.html](mocks/play.html)(プレイ中)、[play-paused.html](mocks/play-paused.html)(一時停止)、[play-completed.html](mocks/play-completed.html)(9 か所そろった数字のボタン)、[play-note-mode.html](mocks/play-note-mode.html)(メモの状態)、[play-cleared.html](mocks/play-cleared.html)(クリア)、[play-failed.html](mocks/play-failed.html)(失敗) |
 | `/stats` | 成績 | [stats.html](mocks/stats.html) |
 
 モックを `http://127.0.0.1:8000/` で配るときの手順は、技術ルールの `shadcn-tailwind.md` に従う。
@@ -102,7 +102,7 @@ flowchart TD
 | 盤面 | | 下の「盤面」 |
 | 操作のボタン | 元に戻す / やり直し / 消す / メモ | 「元に戻す」「やり直し」は、できないときは押せない。「メモ」は入力の状態を切り替え、オンを見て分かるようにする |
 | 入力の状態の表示 | メモ入力中 | メモの状態のときだけ、ゲームの画面の背景(保存できない知らせを除く、ページ全体)を薄い黄色にし、盤面の上に「メモ入力中」と出す(色だけに頼らない。N-03)。読み上げにも伝える(`role="status"`)。数字の状態では背景は今のまま(薄い灰色)で、文言は出さない。文言の行の高さは、どちらの状態でも取っておき、切り替えで盤面が動かないようにする。「メモ」のボタンのオンの見た目は変えない(2026-11-04 にユーザが決めた。Issue #10) |
-| 数字のボタン | 1〜9 | 選んでいるマスに入力する |
+| 数字のボタン | 1〜9 | 選んでいるマスに入力する。入れ終わった数字(G-27。9 か所すべてに正解が入った数字で、手がかりを含み、誤りは数えない)のボタンは、押せなくし、不透明な灰色(灰色の地に灰色の文字)にする。メモの状態でも同じ。「元に戻す」や失敗の後の「やり直す」で入れ終わった数字でなくなると、また押せる(2026-11-04 にユーザが決めた。Issue #9)。一時停止中は、ほかの数字のボタンと同じく薄くする |
 
 ### 盤面
 
@@ -116,6 +116,7 @@ flowchart TD
 | 選んでいるマス | 濃い青の枠と背景 |
 | 選んだマスと同じ行・列・ブロック | 薄い灰色の背景 |
 | 選んだマスと同じ数字 | 薄い青の背景 |
+| 選んだマスと同じ数字のメモ | メモの中のその数字だけを、太字・濃い青の文字にし、薄い青の丸の背景を付ける(色だけに頼らず、太さと形でも区別する。誤りの表示の N-03 と同じ考え方)。選んだマスに数字が無いとき(空欄・メモだけのとき)は強調しない。一時停止中はメモごと隠すので出ない(2026-11-04 にユーザが決めた。Issue #8) |
 
 - 3×3 のブロックの境界は太い線にする。
 - 手がかりのマス、正解の入ったマスも選べる(強調のため)。
@@ -129,7 +130,7 @@ flowchart TD
 | キー | 動き |
 | --- | --- |
 | 矢印 | 選ぶマスを動かす。端で止まる。マスが未選択なら左上を選ぶ |
-| `1`〜`9` | 数字を入力する(メモの状態ならメモ) |
+| `1`〜`9` | 数字を入力する(メモの状態ならメモ)。入れ終わった数字(G-27)のキーは、何もしない(数字のボタンと同じ) |
 | `Backspace`、`Delete` | 消す |
 | `M` | メモの状態を切り替える |
 | `Ctrl` または `Cmd` + `Z` | 元に戻す |

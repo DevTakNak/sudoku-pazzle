@@ -58,19 +58,25 @@ export function applySnapshots(
   return { values, notes };
 }
 
-// 1 マスを変える操作を、履歴に足して反映する。やり直しの履歴は捨てる(G-43)
+// マスを変える 1 つの操作を、履歴に足して反映する。やり直しの履歴は捨てる(G-43)
+export function changeCells(
+  state: GameState,
+  after: readonly CellSnapshot[],
+): GameState {
+  const before = after.map((cell) => snapshotOf(state, cell.index));
+  return {
+    ...state,
+    ...applySnapshots(state, after),
+    undoStack: [...state.undoStack, { before, after: [...after] }],
+    redoStack: [],
+  };
+}
+
 export function changeCell(
   state: GameState,
   index: number,
   value: number,
   notes: number[],
 ): GameState {
-  const before = snapshotOf(state, index);
-  const after: CellSnapshot = { index, value, notes };
-  return {
-    ...state,
-    ...applySnapshots(state, [after]),
-    undoStack: [...state.undoStack, { before: [before], after: [after] }],
-    redoStack: [],
-  };
+  return changeCells(state, [{ index, value, notes }]);
 }
