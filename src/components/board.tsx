@@ -87,6 +87,8 @@ export function Board({
   onSelect: (index: number) => void;
 }) {
   const errors = hidden ? new Set<number>() : errorCells(game);
+  // メモの中で強調する数字(選んだマスの数字。空欄や未選択なら無し)
+  const noteDigit = selected === null ? 0 : game.values[selected]!;
   const gridRef = useRef<HTMLDivElement>(null);
 
   // 盤面にフォーカスがあるときは、選んだマスにフォーカスを移す(読み上げで今のマスが分かるように)
@@ -161,14 +163,24 @@ export function Board({
                     aria-hidden="true"
                     className="grid h-full w-full grid-cols-3 p-px text-[8px] leading-none text-gray-500 sm:text-[10px]"
                   >
-                    {DIGITS.map((d) => (
-                      <span
-                        key={d}
-                        className="flex items-center justify-center"
-                      >
-                        {game.notes[index]!.includes(d) ? d : ""}
-                      </span>
-                    ))}
+                    {DIGITS.map((d) => {
+                      const noted = game.notes[index]!.includes(d);
+                      const same = noted && d === noteDigit;
+                      return (
+                        <span
+                          key={d}
+                          data-highlight={same ? "same-digit" : undefined}
+                          className={cn(
+                            "flex items-center justify-center",
+                            // 色だけに頼らず、太字と丸の背景でも区別する(N-03)
+                            same &&
+                              "rounded-full bg-blue-200 font-bold text-blue-800",
+                          )}
+                        >
+                          {noted ? d : ""}
+                        </span>
+                      );
+                    })}
                   </span>
                 )}
               </div>

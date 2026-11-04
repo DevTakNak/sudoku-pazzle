@@ -426,3 +426,64 @@ describe("T-404: 盤面のフォーカス", () => {
     outside.remove();
   });
 });
+
+describe("T-417: 選んだマスと同じ数字のメモの強調", () => {
+  // メモのマスの、強調された数字の一覧(見た目のメモの並びから取る)
+  function highlightedNotes(index: number): string[] {
+    const memo = cellAt(index).querySelector('[aria-hidden="true"]');
+    return [...memo!.children]
+      .filter((c) => c.getAttribute("data-highlight") === "same-digit")
+      .map((c) => c.textContent ?? "");
+  }
+
+  // idx 3 と idx 40 にメモ。どちらも 5 と、5 以外の数字を持つ
+  const noted = () => withNotes(freshGame(), { 3: [2, 5], 40: [1, 5, 9] });
+
+  it("T-417: 手がかりの 5 を選ぶと、メモの 5 だけが強調され、太字・丸の背景が付く(色だけに頼らない。N-03)", () => {
+    renderBoard(noted(), { selected: 0 });
+
+    expect(highlightedNotes(3)).toEqual(["5"]);
+    expect(highlightedNotes(40)).toEqual(["5"]); // 行・列・ブロックの外でも強調する
+    const memo = cellAt(40).querySelector('[aria-hidden="true"]')!;
+    const five = memo.children[4]!;
+    expect(five).toHaveClass("font-bold", "rounded-full");
+    const one = memo.children[0]!;
+    expect(one.textContent).toBe("1");
+    expect(one).not.toHaveAttribute("data-highlight");
+    expect(one).not.toHaveClass("font-bold");
+  });
+
+  it("T-417: 入力した正解(4)と誤り(8)を選んでも、その数字のメモが強調される", () => {
+    const game = withNotes(withValues(freshGame(), { 2: 4, 6: 8 }), {
+      3: [4, 8],
+    });
+    const { unmount } = render(
+      <Board game={game} selected={2} hidden={false} onSelect={vi.fn()} />,
+    );
+    expect(highlightedNotes(3)).toEqual(["4"]);
+    unmount();
+
+    renderBoard(game, { selected: 6 });
+    expect(highlightedNotes(3)).toEqual(["8"]);
+  });
+
+  it("T-417: 空欄・メモだけのマスを選んだときと、選択が無いときは強調しない", () => {
+    const { unmount } = render(
+      <Board game={noted()} selected={3} hidden={false} onSelect={vi.fn()} />,
+    );
+    expect(highlightedNotes(3)).toEqual([]);
+    expect(highlightedNotes(40)).toEqual([]);
+    unmount();
+
+    renderBoard(noted());
+    expect(highlightedNotes(40)).toEqual([]);
+  });
+
+  it("T-417: 一時停止中(hidden)はメモを出さないので、強調も無い", () => {
+    renderBoard(noted(), { selected: 0, hidden: true });
+
+    expect(
+      allCells().some((c) => c.querySelector('[data-highlight="same-digit"]')),
+    ).toBe(false);
+  });
+});
