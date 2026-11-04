@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// 盤面(T-404、T-405)。Board を直接描画して、マスごとの表示と読み上げの名前を確かめる
+// 盤面(T-404、T-405、T-417)。Board を直接描画して、マスごとの表示と読み上げの名前を確かめる
 import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -424,5 +424,91 @@ describe("T-404: 盤面のフォーカス", () => {
     );
     expect(document.activeElement).toBe(outside);
     outside.remove();
+  });
+});
+
+describe("T-417: 選んだマスと同じ数字のメモの強調", () => {
+  // メモのマスの、強調された数字の一覧(見た目のメモの並びから取る)
+  function highlightedNotes(index: number): string[] {
+    return [...memoOf(index).children]
+      .filter((c) => c.hasAttribute("data-note-highlight"))
+      .map((c) => c.textContent ?? "");
+  }
+
+  function memoOf(index: number): Element {
+    return cellAt(index).querySelector('[aria-hidden="true"]')!;
+  }
+
+  // メモの 9 個の位置に、強調の印も丸の背景も無い
+  function expectNoHighlight(index: number) {
+    for (const c of memoOf(index).children) {
+      expect(c).not.toHaveAttribute("data-note-highlight");
+      expect(c).not.toHaveClass("rounded-full");
+      expect(c).not.toHaveClass("bg-blue-200");
+    }
+  }
+
+  // 盤面は UNIQUE_PUZZLE。手がかりの 5 は idx 0、14、71。
+  // idx 28(4 行 2 列)と idx 40(5 行 5 列)は、どの 5 とも行・列・ブロックが重ならず、
+  // 5 をメモに置ける空欄(28 の解は 5)。idx 50(6 行 6 列)には 5 を持たないメモを置く
+  const noted = () =>
+    withNotes(freshGame(), { 28: [2, 5], 40: [1, 5, 9], 50: [1, 4] });
+
+  it("T-417: 手がかりの 5 を選ぶと、メモの 5 だけが強調され、太字・丸の背景が付く(色だけに頼らない)", () => {
+    renderBoard(noted(), { selected: 0 });
+
+    expect(highlightedNotes(28)).toEqual(["5"]);
+    expect(highlightedNotes(40)).toEqual(["5"]); // 選んだマスと行・列・ブロックが違っても強調する
+    const five = memoOf(40).children[4]!;
+    expect(five).toHaveClass("font-bold", "rounded-full", "bg-blue-200");
+    const one = memoOf(40).children[0]!;
+    expect(one.textContent).toBe("1");
+    expect(one).not.toHaveAttribute("data-note-highlight");
+    expect(one).not.toHaveClass("font-bold");
+    expect(one).not.toHaveClass("rounded-full");
+    expect(one).not.toHaveClass("bg-blue-200");
+  });
+
+  it("T-417: 選んだ数字がメモに無いマスと、メモの無い空欄には、強調も空の丸も出ない", () => {
+    renderBoard(noted(), { selected: 0 });
+
+    expectNoHighlight(50); // 5 を持たないメモ
+    expectNoHighlight(6); // メモの無い空欄
+  });
+
+  it("T-417: 入力した正解(4)と誤り(8)を選んでも、その数字のメモが強調される", () => {
+    // idx 2 に正解の 4、idx 6 に誤りの 8(解は 9)。メモは、どちらとも行・列・ブロックが
+    // 重ならない idx 40 に置く(正解の入力で消える G-33 と食い違わないように)
+    const game = withNotes(withValues(freshGame(), { 2: 4, 6: 8 }), {
+      40: [4, 8],
+    });
+    const { unmount } = render(
+      <Board game={game} selected={2} hidden={false} onSelect={vi.fn()} />,
+    );
+    expect(highlightedNotes(40)).toEqual(["4"]);
+    unmount();
+
+    renderBoard(game, { selected: 6 });
+    expect(highlightedNotes(40)).toEqual(["8"]);
+  });
+
+  it("T-417: 空欄・メモだけのマスを選んだときと、選択が無いときは強調しない", () => {
+    const { unmount } = render(
+      <Board game={noted()} selected={28} hidden={false} onSelect={vi.fn()} />,
+    );
+    expectNoHighlight(28);
+    expectNoHighlight(40);
+    unmount();
+
+    renderBoard(noted());
+    expectNoHighlight(40);
+  });
+
+  it("T-417: 一時停止中(hidden)はメモを出さないので、強調も無い", () => {
+    renderBoard(noted(), { selected: 0, hidden: true });
+
+    expect(
+      allCells().some((c) => c.querySelector("[data-note-highlight]")),
+    ).toBe(false);
   });
 });
