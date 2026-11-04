@@ -75,12 +75,12 @@ function completedDigits() {
   );
 }
 
-function renderControls(el, { disabled = false } = {}) {
+function renderControls(el, { disabled = false, noteMode = false } = {}) {
   const completed = completedDigits();
   const state = disabled ? "disabled" : "";
   const dim = disabled ? "opacity-40" : "";
-  const action = (label, extra = "") =>
-    `<button ${state} class="h-12 min-w-0 rounded-lg border bg-white px-1 text-sm font-medium ${dim} ${extra}">${label}</button>`;
+  const action = (label, extra = "bg-white") =>
+    `<button ${state} class="h-12 min-w-0 rounded-lg border px-1 text-sm font-medium ${dim} ${extra}">${label}</button>`;
   const digits = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     .map((n) =>
       completed.includes(n)
@@ -91,9 +91,9 @@ function renderControls(el, { disabled = false } = {}) {
   el.innerHTML = `
     <div class="grid grid-cols-4 gap-2 md:grid-cols-2">
       ${action("元に戻す")}
-      ${action("やり直し", "text-gray-400")}
+      ${action("やり直し", "bg-white text-gray-400")}
       ${action("消す")}
-      ${action("メモ")}
+      ${action("メモ", noteMode ? "border-blue-700 bg-blue-700 text-white" : "bg-white")}
     </div>
     <div class="mt-2 grid grid-cols-5 gap-2 min-[480px]:grid-cols-9 md:grid-cols-3">${digits}</div>`;
 }
@@ -136,15 +136,17 @@ function renderHome(root, { showContinue = true, generating = false, dialog = nu
     ${dialog ? dialogHtml(dialog) : ""}`;
 }
 
+// noteMode: メモの状態(背景を薄い黄色にし、「メモ入力中」を出す)
 // completeDigit: その数字の空欄をすべて正解で埋める(入れ終わった数字のボタンを見せる)
-function renderPlay(root, { hidden = false, disabled = false, mistakes = 1, time = "12:34", pauseLabel = "一時停止", completeDigit = 0 } = {}) {
+function renderPlay(root, { hidden = false, disabled = false, mistakes = 1, time = "12:34", pauseLabel = "一時停止", completeDigit = 0, noteMode = false } = {}) {
   if (completeDigit) {
     for (const i of Array(81).keys()) {
       if (Number(SOLUTION[i]) === completeDigit && Number(PUZZLE[i]) === 0) ENTERED[i] = completeDigit;
     }
   }
   root.innerHTML = `
-    <main class="mx-auto w-full max-w-4xl px-4 py-4">
+    <main class="w-full flex-1 ${noteMode ? "bg-yellow-100" : ""}">
+    <div class="mx-auto w-full max-w-4xl px-4 py-4">
       <header class="flex flex-wrap items-center justify-between gap-2 text-sm">
         <a href="#" class="flex h-11 items-center font-medium text-blue-700 underline">ホーム</a>
         <span class="font-medium">かんたん</span>
@@ -152,14 +154,18 @@ function renderPlay(root, { hidden = false, disabled = false, mistakes = 1, time
         <span class="tabular-nums">${time}</span>
         <button class="h-11 rounded-lg border bg-white px-3 font-medium">${pauseLabel}</button>
       </header>
-      <div class="mt-3 grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem]">
-        <div class="relative">
-          <div id="board"></div>
-          <div id="overlay"></div>
+      <div class="mt-2 grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem]">
+        <div>
+          <p role="status" class="h-5 text-center text-sm font-bold text-yellow-900">${noteMode ? "メモ入力中" : `<span class="sr-only">数字入力中</span>`}</p>
+          <div class="relative mt-1">
+            <div id="board"></div>
+            <div id="overlay"></div>
+          </div>
         </div>
-        <div id="controls"></div>
+        <div class="md:pt-6"><div id="controls"></div></div>
       </div>
+    </div>
     </main>`;
   renderBoard(root.querySelector("#board"), { hidden });
-  renderControls(root.querySelector("#controls"), { disabled });
+  renderControls(root.querySelector("#controls"), { disabled, noteMode });
 }
