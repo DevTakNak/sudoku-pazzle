@@ -1,4 +1,4 @@
-// 数字の入力と消す(G-21〜G-26、G-33、G-51〜G-53)
+// 数字の入力と消す(G-21〜G-26、G-33、G-34、G-51〜G-53)
 import { PEERS } from "@/lib/sudoku/grid";
 
 import { changeCell, changeCells, isCellIndex, isDigit } from "./state";
@@ -31,14 +31,22 @@ export function inputDigit(
       status: mistakes >= MAX_MISTAKES ? "failed" : "playing",
     };
   }
-  // 正解なら、同じ行・列・ブロックのメモからその数字を消し、入力と 1 つの操作にする(G-33)
-  const peerNotes: CellSnapshot[] = PEERS[index]!.filter((p) =>
-    state.notes[p]!.includes(digit),
-  ).map((p) => ({
-    index: p,
-    value: state.values[p]!,
-    notes: state.notes[p]!.filter((d) => d !== digit),
-  }));
+  // 正解なら、同じ行・列・ブロックのメモからその数字を消し、入力と 1 つの操作にする(G-33)。
+  // この入力でその数字が 9 か所そろうなら、すべてのマスのメモから消す(G-34)
+  const placed = state.values.filter(
+    (v, i) => v === digit && v === state.solution[i],
+  ).length;
+  const targets =
+    placed + 1 === 9
+      ? state.notes.flatMap((_, i) => (i === index ? [] : [i]))
+      : PEERS[index]!;
+  const peerNotes: CellSnapshot[] = targets
+    .filter((p) => state.notes[p]!.includes(digit))
+    .map((p) => ({
+      index: p,
+      value: state.values[p]!,
+      notes: state.notes[p]!.filter((d) => d !== digit),
+    }));
   const next = changeCells(state, [
     { index, value: digit, notes: [] },
     ...peerNotes,

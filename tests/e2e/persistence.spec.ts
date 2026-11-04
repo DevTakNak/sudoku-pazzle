@@ -13,7 +13,9 @@ import {
   readPuzzleAndSolution,
   seedStorage,
   startNewGame,
+  openDigits,
   timerSeconds,
+  wrongDigit,
 } from "./support";
 
 const TIME_PATTERN = /タイム\s*(\d+(?::\d{2}){1,2})/;
@@ -26,7 +28,7 @@ test.describe("T-503: 再読み込みの後", () => {
     const player = new Player(page, hasTouch);
     await page.goto("/");
     await startNewGame(page, "かんたん");
-    const { cells, solution } = await readPuzzleAndSolution(page);
+    const { cells, puzzle, solution } = await readPuzzleAndSolution(page);
     const blanks = cells.filter((c) => c.kind === "empty").map((c) => c.index);
     const [correctCell, wrongCell, noteCell, otherCell] = blanks as [
       number,
@@ -34,18 +36,21 @@ test.describe("T-503: 再読み込みの後", () => {
       number,
       number,
     ];
-    const wrongDigit = (solution[wrongCell]! % 9) + 1;
+    // 正解を入れた後の盤面で、入れ終わっていない数字を選ぶ
+    const values = puzzle.map((v, i) => (i === correctCell ? solution[i]! : v));
+    const wrong = wrongDigit(wrongCell, solution, values);
+    const [note1, note2] = openDigits(solution, values) as [number, number];
 
     // 正解を 1 つ、誤りを 1 つ、メモを 2 つ入れる
     await player.enterByButtons(correctCell, solution[correctCell]!);
-    await player.enterByButtons(wrongCell, wrongDigit);
+    await player.enterByButtons(wrongCell, wrong);
     await expect(mistakesLocator(page, 1)).toBeVisible();
     await player.press(player.button("メモ"));
-    await player.enterByButtons(noteCell, 2);
-    await player.enterByButtons(noteCell, 5);
+    await player.enterByButtons(noteCell, note1);
+    await player.enterByButtons(noteCell, note2);
     await expect(player.cell(noteCell)).toHaveAttribute(
       "aria-label",
-      cellLabel(noteCell, "メモ 2 5"),
+      cellLabel(noteCell, `メモ ${note1} ${note2}`),
     );
     await expect.poll(() => timerSeconds(page)).toBeGreaterThanOrEqual(2);
     const secondsBefore = await timerSeconds(page);
@@ -73,11 +78,11 @@ test.describe("T-503: 再読み込みの後", () => {
     );
     await expect(player.cell(wrongCell)).toHaveAttribute(
       "aria-label",
-      cellLabel(wrongCell, `${wrongDigit}、誤り`),
+      cellLabel(wrongCell, `${wrong}、誤り`),
     );
     await expect(player.cell(noteCell)).toHaveAttribute(
       "aria-label",
-      cellLabel(noteCell, "メモ 2 5"),
+      cellLabel(noteCell, `メモ ${note1} ${note2}`),
     );
     // 手を付けていないマスは空欄のまま
     await expect(player.cell(otherCell)).toHaveAttribute(
@@ -88,7 +93,7 @@ test.describe("T-503: 再読み込みの後", () => {
     await player.press(player.button("元に戻す"));
     await expect(player.cell(noteCell)).toHaveAttribute(
       "aria-label",
-      cellLabel(noteCell, "メモ 2"),
+      cellLabel(noteCell, `メモ ${note1}`),
     );
     // 間違いの回数は、元に戻しても減らない
     await expect(mistakesLocator(page, 1)).toBeVisible();
@@ -142,10 +147,10 @@ test.describe("T-503: 再読み込みの後", () => {
     const player = new Player(page, hasTouch);
     await page.goto("/");
     await startNewGame(page, "かんたん");
-    const { cells, solution } = await readPuzzleAndSolution(page);
+    const { cells, puzzle, solution } = await readPuzzleAndSolution(page);
     const blanks = cells.filter((c) => c.kind === "empty").map((c) => c.index);
     for (const index of blanks.slice(0, 3)) {
-      await player.enterWrong(index, solution);
+      await player.enterWrong(index, solution, puzzle);
     }
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toContainText("失敗しました");
