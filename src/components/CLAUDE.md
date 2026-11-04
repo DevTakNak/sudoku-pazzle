@@ -7,7 +7,7 @@
 | パス | 画面 | モック |
 | --- | --- | --- |
 | `/` | ホーム | [home.html](mocks/home.html)(続きあり)、[home-confirm.html](mocks/home-confirm.html)(上書きの確認)、[home-generating.html](mocks/home-generating.html)(問題を作っている)、[home-error.html](mocks/home-error.html)(作れなかった) |
-| `/play` | ゲーム | [play.html](mocks/play.html)(プレイ中)、[play-paused.html](mocks/play-paused.html)(一時停止)、[play-cleared.html](mocks/play-cleared.html)(クリア)、[play-failed.html](mocks/play-failed.html)(失敗) |
+| `/play` | ゲーム | [play.html](mocks/play.html)(プレイ中)、[play-paused.html](mocks/play-paused.html)(一時停止)、[play-note-mode.html](mocks/play-note-mode.html)(メモの状態)、[play-cleared.html](mocks/play-cleared.html)(クリア)、[play-failed.html](mocks/play-failed.html)(失敗) |
 | `/stats` | 成績 | [stats.html](mocks/stats.html) |
 
 モックを `http://127.0.0.1:8000/` で配るときの手順は、技術ルールの `shadcn-tailwind.md` に従う。

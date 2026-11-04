@@ -8,8 +8,8 @@
     <style type="text/tailwindcss">@layer base { *, ::after, ::before, ::backdrop, ::file-selector-button { border-color: var(--color-gray-200, currentColor); } }</style>
     <script src="mock.js"></script>
   </head>
-  <body class="min-h-screen bg-gray-50 text-gray-900">
-    <div id="root"></div>
+  <body class="flex min-h-screen flex-col bg-gray-50 text-gray-900">
+    <div id="root" class="flex flex-1 flex-col"></div>
     <script>
       const root = document.getElementById("root");
       renderPlay(root, { hidden: true, disabled: true, pauseLabel: "再開" });
