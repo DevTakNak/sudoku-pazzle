@@ -18,8 +18,8 @@ make dev          # 開発サーバー(http://localhost:3000)
 make build        # 本番用のビルド
 make test         # lint、型チェック、Prettier の確認、単体テスト
 make test-e2e     # E2E(Playwright Test)
-make deploy       # Vercel のプレビューにデプロイ
-make deploy-prod  # Vercel の本番にデプロイ
+make deploy       # 手元の作業ツリーを Vercel のプレビューにデプロイ
+make deploy-prod  # Vercel の本番にデプロイ(ワークフローを使えないときだけ)
 ```
 
 デプロイの前に、`npx vercel login` でログインし、`npx vercel link` でプロジェクトをつなぐ。各ターゲットの中身は [CLAUDE.md](CLAUDE.md) の「Makefile」に書いた。

@@ -1,9 +1,11 @@
 name: preview
 
 # 本番に出す前に、タグを Vercel のプレビューに出して、人の目で確かめる。
-# 承認者が、プレビューに出すタグを指定して手動で実行する(ユーザの指示があれば Claude も実行してよい)。
-# 確かめる中身は deploy.yml と同じ。違うのは、--prod を付けないことと、
-# Environment が preview(承認者なし)で、本番用とは別のトークンを使うこと
+# 承認者が、プレビューに出すタグを指定して手動で実行する。
+# 確かめる中身は deploy.yml と同じ。違うのは、--prod を付けないこと、
+# Environment が preview(承認者なし)で本番用とは別のトークンを使うこと、
+# URL をジョブのまとめに出すこと、concurrency の名前、
+# deploy のジョブでも承認者を確かめること(下の注釈)
 on:
   workflow_dispatch:
     inputs:
@@ -97,6 +99,20 @@ jobs:
       name: preview
       url: ${{ steps.deploy.outputs.url }}
     steps:
+      # preview には承認者が付かないので、失敗したジョブだけを再実行(Re-run failed jobs)すると、
+      # verify の承認者の確認を通らずにこのジョブが動く。秘密の値を使う前に、ここでも確かめる
+      - name: 実行した人が承認者であることを確かめる
+        env:
+          APPROVERS: ${{ vars.DEPLOY_APPROVERS }}
+          ACTORS: ${{ github.actor }} ${{ github.triggering_actor }}
+        run: |
+          for actor in $ACTORS; do
+            if ! printf '%s\n' "$APPROVERS" | tr -s ', ' '\n' | grep -qixF "$actor"; then
+              echo "::error::${actor} は承認者(DEPLOY_APPROVERS)に入っていません"
+              exit 1
+            fi
+          done
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.verify.outputs.sha }}
@@ -121,7 +137,8 @@ jobs:
           TAG: ${{ inputs.tag }}
         run: |
           url=$(npx vercel deploy --yes)
-          if ! printf '%s' "$url" | grep -qE '^https://[^[:space:]]+$'; then
+          # 1 行の URL だけを受け付ける(grep は行ごとに判定するので、複数行でも通ってしまう)
+          if ! [[ "$url" =~ ^https://[^[:space:]]+$ ]]; then
             echo "::error::デプロイの URL を読み取れませんでした"
             exit 1
           fi
