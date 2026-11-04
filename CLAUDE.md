@@ -80,7 +80,8 @@ DB、Prisma、認証、API スキーマ(OpenAPI)は使わない。API ルート�
 - Vercel の GitHub 連携(push で自動デプロイ)は設定しない。デプロイは、指示を受けてから Vercel CLI で行う。
 - MVP の後(2026-11-04 から)は、GitHub(公開のリポジトリ `DevTakNak/sudoku-pazzle`)の Issue と PR で開発する(`github-pr-cycle` スキル)。本番へのデプロイは、承認者(ユーザ)が、GitHub Actions の `deploy` のワークフローを、デプロイするタグを指定して手動で実行する。ワークフローは、`main` から実行したこと、実行した人が承認者(Variables の `DEPLOY_APPROVERS`)であること、タグが `main` の履歴にあること、そのタグでテストが通ることを確かめ、Environment `production` の承認を待ってから、`npx vercel deploy --prod` で Vercel 側にビルドさせる。テストとデプロイには、確かめたときのタグのコミット(SHA)を使う(承認を待つ間にタグを動かされても、確かめていないコミットを出さないため)。
 - デプロイのワークフローが呼ぶテストの手順は、タグの時点ではなく、実行した時点の `main` の `test.yml` になる(GitHub の仕組みで、タグの時点のワークフローは呼べない)。前のバージョンのタグに戻すときに、今の手順に無いスクリプトなどでテストが落ちたら、そのときに対処する(2026-11-04 の PR #1 のレビューの指摘で、ユーザが決めた)。
-- ワークフローで使う Vercel のトークンは、`sudoku-pazzle` だけに絞った有効期限つきのもので、`production` の Environment の Secrets に置く(Vercel は GitHub Actions からのデプロイの OIDC に対応していないため。2026-11-04 に確かめた)。
+- 本番に出す前に、`preview` のワークフローで、同じタグを Vercel のプレビューに出し、人の目で(スマホの実機での見た目など)確かめる(2026-11-04 にユーザが決めた。Issue #14)。確かめる中身は `deploy` と同じで、`--prod` を付けずに出し、URL をジョブのまとめに書く。Environment `preview` は承認者なしで、`main` からだけ実行できる。実行できるのは承認者で、ユーザの指示があれば Claude も `gh workflow run preview.yml --ref main -f tag=v<バージョン>` で実行してよい。プレビューの URL は、Vercel にログインしたブラウザでだけ開ける(Deployment Protection)。
+- ワークフローで使う Vercel のトークンは、`sudoku-pazzle` だけに絞った有効期限つきのもので、本番用は `production`、プレビュー用は `preview` の Environment の Secrets に、別々のトークンを置く(Vercel は GitHub Actions からのデプロイの OIDC に対応していないため。2026-11-04 に確かめた)。
 - テスト、テストの設定、`.env*` などは `.vercelignore` でデプロイから外す。
 - 無料枠と利用条件は、デプロイの準備で公式の情報を確かめ直す(`vercel.md`)。
 
@@ -104,7 +105,7 @@ sudoku-pazzle/
 ├── playwright.config.ts      Playwright Test の設定(本番のビルドで起動)
 ├── .husky/                   コミット前の確認(lint-staged)
 ├── .github/
-│   ├── workflows/            PR のテスト(test.yml)と、承認者が動かすデプロイ(deploy.yml)
+│   ├── workflows/            PR のテスト(test.yml)と、承認者が動かすプレビュー(preview.yml)と本番のデプロイ(deploy.yml)
 │   └── pull_request_template.md
 ├── src/
 │   ├── app/                  ルーティング(/、/play、/stats)

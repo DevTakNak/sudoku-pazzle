@@ -23,3 +23,11 @@ make deploy-prod  # Vercel の本番にデプロイ
 ```
 
 デプロイの前に、`npx vercel login` でログインし、`npx vercel link` でプロジェクトをつなぐ。各ターゲットの中身は [CLAUDE.md](CLAUDE.md) の「Makefile」に書いた。
+
+## 本番に出す流れ(GitHub Actions)
+
+1. PR をマージして、バージョンのタグ(`v1.2.3`)を付ける
+2. `preview` のワークフローを、タグを指定して実行し、ジョブのまとめに出るプレビューの URL を、Vercel にログインしたブラウザで開いて確かめる
+3. 承認者が `deploy` のワークフローを同じタグで実行し、`production` の承認をして本番に出す
+
+詳しくは [CLAUDE.md](CLAUDE.md) の「本番の構成」に書いた。
