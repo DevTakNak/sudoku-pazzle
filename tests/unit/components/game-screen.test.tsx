@@ -732,3 +732,71 @@ describe("T-408: React の StrictMode(開発サーバー)でも同じに動く",
     },
   );
 });
+
+describe("T-418: 入れ終わった数字のボタンとキー", () => {
+  // 4 のマスを、マス 2(解は 4)を除いて解のとおりに埋めた状態
+  function eightFours(): GameState {
+    const changes: Record<number, number> = {};
+    freshGame().solution.forEach((v, i) => {
+      if (v === 4 && i !== 2) changes[i] = 4;
+    });
+    return withValues(freshGame(), changes);
+  }
+
+  it("T-418: 9 か所目の 4 を入れると、4 のボタンが押せず灰色になり、ほかの数字は押せる", async () => {
+    const { user } = setup(eightFours());
+    await resume(user);
+    expect(button("4")).toBeEnabled();
+
+    await selectCell(user, 2);
+    await user.click(button("4"));
+
+    expect(button("4")).toBeDisabled();
+    expect(button("4")).toHaveClass("bg-gray-200", "text-gray-400");
+    expect(button("5")).toBeEnabled();
+    expect(button("5")).not.toHaveClass("bg-gray-200");
+  });
+
+  it("T-418: 入れ終わった 4 のキーは、空欄に押しても何も入れず、回数も増えない", async () => {
+    const { user } = setup(eightFours());
+    await resume(user);
+    await selectCell(user, 2);
+    await user.keyboard("4");
+    expect(button("4")).toBeDisabled();
+
+    // マス 3(解は 6)に 4 を押す。入れば誤りで回数が増えるはず
+    await selectCell(user, 3);
+    await user.keyboard("4");
+
+    expect(cellAt(3)).toHaveAccessibleName("1 行 4 列、空欄");
+    expect(mistakesText()).toBe("間違い 0/3");
+  });
+
+  it("T-418: メモの状態でも、4 のボタンは押せず、4 のキーでメモが付かない", async () => {
+    const { user } = setup(eightFours());
+    await resume(user);
+    await selectCell(user, 2);
+    await user.click(button("4"));
+    await user.click(button("メモ"));
+
+    expect(button("4")).toBeDisabled();
+    await selectCell(user, 3);
+    await user.keyboard("4");
+    await user.keyboard("5");
+
+    expect(cellAt(3)).toHaveAccessibleName("1 行 4 列、メモ 5");
+  });
+
+  it("T-418: 元に戻して 8 か所に減ると、4 のボタンがまた押せる", async () => {
+    const { user } = setup(eightFours());
+    await resume(user);
+    await selectCell(user, 2);
+    await user.click(button("4"));
+    expect(button("4")).toBeDisabled();
+
+    await user.click(button("元に戻す"));
+
+    expect(button("4")).toBeEnabled();
+    expect(button("4")).not.toHaveClass("bg-gray-200");
+  });
+});
