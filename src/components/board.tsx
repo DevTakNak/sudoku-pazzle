@@ -39,6 +39,11 @@ function errorCells(game: GameState): Set<number> {
   return cells;
 }
 
+// 選んだマスの数字。未選択か空欄なら 0
+function selectedDigit(game: GameState, selected: number | null): number {
+  return selected === null ? 0 : game.values[selected]!;
+}
+
 function highlightOf(
   game: GameState,
   index: number,
@@ -48,7 +53,7 @@ function highlightOf(
   if (index === selected) return "selected";
   if (errors.has(index)) return "error";
   if (selected === null) return "none";
-  const selectedValue = game.values[selected]!;
+  const selectedValue = selectedDigit(game, selected);
   if (selectedValue !== 0 && game.values[index] === selectedValue) {
     return "same-digit";
   }
@@ -87,8 +92,8 @@ export function Board({
   onSelect: (index: number) => void;
 }) {
   const errors = hidden ? new Set<number>() : errorCells(game);
-  // メモの中で強調する数字(選んだマスの数字。空欄や未選択なら無し)
-  const noteDigit = selected === null ? 0 : game.values[selected]!;
+  // メモの中で強調する数字(空欄や未選択なら 0 で、どのメモとも合わない)
+  const noteDigit = selectedDigit(game, selected);
   const gridRef = useRef<HTMLDivElement>(null);
 
   // 盤面にフォーカスがあるときは、選んだマスにフォーカスを移す(読み上げで今のマスが分かるように)
@@ -169,7 +174,7 @@ export function Board({
                       return (
                         <span
                           key={d}
-                          data-highlight={same ? "same-digit" : undefined}
+                          data-note-highlight={same ? "true" : undefined}
                           className={cn(
                             "flex items-center justify-center",
                             // 色だけに頼らず、太字と丸の背景でも区別する(N-03)
