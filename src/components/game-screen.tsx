@@ -87,13 +87,13 @@ export function GameScreen() {
 
   function enterDigit(digit: number) {
     if (selected === null) return;
-    // 入れ終わった数字は、メモの状態でも何もしない
-    if (game !== null && completedDigits(game).has(digit)) return;
-    store.updateGame((g) =>
-      noteMode
+    store.updateGame((g) => {
+      // 入れ終わった数字は、メモの状態でも何もしない(G-27)
+      if (completedDigits(g).has(digit)) return g;
+      return noteMode
         ? toggleNote(g, selected, digit)
-        : inputDigit(g, selected, digit),
-    );
+        : inputDigit(g, selected, digit);
+    });
   }
 
   function erase() {
@@ -324,10 +324,15 @@ function Controls({
             disabled={disabled || completed.has(digit)}
             onClick={() => onDigit(digit)}
             className={cn(
-              "h-12 rounded-lg border bg-white text-xl font-medium disabled:opacity-40 md:h-16",
-              // 入れ終わった数字は灰色にする(入れる場所が無いことが分かるように)
-              completed.has(digit) &&
-                "border-gray-200 bg-gray-200 text-gray-400",
+              "h-12 rounded-lg border bg-white text-xl font-medium md:h-16",
+              // 入れ終わった数字は、不透明な灰色にする(どの数字か読めるように)。
+              // 一時停止中などのほかの押せない状態だけ薄くする
+              completed.has(digit)
+                ? cn(
+                    "border-gray-200 bg-gray-200 text-gray-400",
+                    disabled && "opacity-40",
+                  )
+                : "disabled:opacity-40",
             )}
           >
             {digit}

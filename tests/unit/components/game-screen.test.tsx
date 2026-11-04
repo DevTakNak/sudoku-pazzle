@@ -787,6 +787,40 @@ describe("T-418: 入れ終わった数字のボタンとキー", () => {
     expect(cellAt(3)).toHaveAccessibleName("1 行 4 列、メモ 5");
   });
 
+  it("T-418: 読み込んだ時点で 9 か所そろっている数字も押せない。灰色は不透明で、一時停止中だけ薄くする", async () => {
+    const { user } = setup(withValues(eightFours(), { 2: 4 }));
+    // 読み込んだ直後は一時停止中
+    expect(button("4")).toBeDisabled();
+    expect(button("4")).toHaveClass("opacity-40");
+
+    await resume(user);
+
+    expect(button("4")).toBeDisabled();
+    expect(button("4")).toHaveClass("bg-gray-200", "text-gray-400");
+    // not.toHaveClass に複数を渡すと「すべてを持つ」の否定になるので、1 つずつ確かめる
+    expect(button("4")).not.toHaveClass("opacity-40");
+    expect(button("4")).not.toHaveClass("disabled:opacity-40");
+    // ほかの押せない状態(一時停止中など)の薄さは、入れ終わっていないボタンに残る
+    expect(button("5")).toHaveClass("disabled:opacity-40");
+  });
+
+  it("T-418: 失敗の後の「やり直す」で入力が初めに戻ると、4 のボタンがまた押せる", async () => {
+    const { user } = setup(eightFours());
+    await resume(user);
+    await selectCell(user, 2);
+    await user.click(button("4"));
+    expect(button("4")).toBeDisabled();
+
+    // マス 3(解は 6)に誤りを 3 回入れて失敗にする
+    await selectCell(user, 3);
+    await user.keyboard("1");
+    await user.keyboard("2");
+    await user.keyboard("3");
+    await user.click(screen.getByRole("button", { name: "やり直す" }));
+
+    expect(button("4")).toBeEnabled();
+  });
+
   it("T-418: 元に戻して 8 か所に減ると、4 のボタンがまた押せる", async () => {
     const { user } = setup(eightFours());
     await resume(user);
