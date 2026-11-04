@@ -173,48 +173,58 @@ export function GameScreen() {
             {showPaused ? "再開" : "一時停止"}
           </button>
         </header>
-        {/* 色だけに頼らず、文言でも知らせる(N-03)。行の高さは取っておき、盤面を動かさない */}
-        <p
-          role="status"
-          className="mt-2 h-5 text-center text-sm font-bold text-yellow-900"
-        >
-          {noteMode ? "メモ入力中" : ""}
-        </p>
-        <div className="mt-1 grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem]">
-          <div className="relative">
-            <Board
-              game={game}
-              selected={showPaused ? null : selected}
-              hidden={showPaused}
-              onSelect={(index) => {
-                if (running) setSelected(index);
-              }}
-            />
-            {showPaused && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/80">
-                <p className="text-lg font-bold">一時停止中</p>
-                <button
-                  type="button"
-                  onClick={() => store.setPaused(false)}
-                  className="h-11 rounded-lg bg-blue-700 px-6 font-medium text-white"
-                >
-                  再開
-                </button>
-              </div>
-            )}
+        <div className="mt-2 grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem]">
+          <div>
+            {/* 色だけに頼らず、文言でも知らせる(N-03)。盤面の真上の中央に出す。
+                行の高さは取っておき、盤面を動かさない。数字の状態は、読み上げにだけ伝える */}
+            <p
+              role="status"
+              className="h-5 text-center text-sm font-bold text-yellow-900"
+            >
+              {noteMode ? (
+                "メモ入力中"
+              ) : (
+                <span className="sr-only">数字入力中</span>
+              )}
+            </p>
+            <div className="relative mt-1">
+              <Board
+                game={game}
+                selected={showPaused ? null : selected}
+                hidden={showPaused}
+                onSelect={(index) => {
+                  if (running) setSelected(index);
+                }}
+              />
+              {showPaused && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/80">
+                  <p className="text-lg font-bold">一時停止中</p>
+                  <button
+                    type="button"
+                    onClick={() => store.setPaused(false)}
+                    className="h-11 rounded-lg bg-blue-700 px-6 font-medium text-white"
+                  >
+                    再開
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          <Controls
-            disabled={controlsDisabled}
-            canUndo={canUndo}
-            canRedo={canRedo}
-            noteMode={noteMode}
-            onUndo={() => store.updateGame(undo)}
-            onRedo={() => store.updateGame(redo)}
-            onErase={erase}
-            onToggleNoteMode={() => setNoteMode((m) => !m)}
-            onDigit={enterDigit}
-            completed={completedDigits(game)}
-          />
+          {/* PC では、盤面の上の文言の行の分(h-5 と mt-1)だけ下げて、盤面とそろえる */}
+          <div className="md:pt-6">
+            <Controls
+              disabled={controlsDisabled}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              noteMode={noteMode}
+              onUndo={() => store.updateGame(undo)}
+              onRedo={() => store.updateGame(redo)}
+              onErase={erase}
+              onToggleNoteMode={() => setNoteMode((m) => !m)}
+              onDigit={enterDigit}
+              completed={completedDigits(game)}
+            />
+          </div>
         </div>
         <EndDialog
           game={game}

@@ -839,14 +839,29 @@ describe("T-419: メモの状態の表示", () => {
   function noteStatus(): HTMLElement {
     return within(screen.getByRole("main")).getByRole("status");
   }
+  function main(): HTMLElement {
+    return screen.getByRole("main");
+  }
+  // 数字の状態: 背景はそのまま、見える文言は無く、読み上げにだけ「数字入力中」を伝える
+  function expectNumberMode() {
+    expect(main()).not.toHaveClass("bg-yellow-100");
+    expect(noteStatus()).toHaveTextContent(/^数字入力中$/);
+    expect(within(noteStatus()).getByText("数字入力中")).toHaveClass("sr-only");
+  }
+  // メモの状態: 薄い黄色の背景と、見える「メモ入力中」
+  function expectNoteMode() {
+    expect(main()).toHaveClass("bg-yellow-100");
+    expect(noteStatus()).toHaveTextContent(/^メモ入力中$/);
+    expect(within(noteStatus()).getByText("メモ入力中")).not.toHaveClass(
+      "sr-only",
+    );
+  }
 
-  it("T-419: 数字の状態では、背景は薄い黄色でなく、「メモ入力中」も出ない", async () => {
+  it("T-419: 数字の状態では、背景は薄い黄色でなく、「メモ入力中」も出ず、読み上げにだけ「数字入力中」を伝える", async () => {
     const { user } = setup(freshGame());
     await resume(user);
 
-    expect(screen.getByRole("main")).not.toHaveClass("bg-yellow-100");
-    expect(noteStatus()).toHaveTextContent(/^$/);
-    expect(screen.queryByText("メモ入力中")).not.toBeInTheDocument();
+    expectNumberMode();
   });
 
   it("T-419: 「メモ」のボタンでメモの状態にすると、背景が薄い黄色になり「メモ入力中」が出て、戻すと消える", async () => {
@@ -854,12 +869,10 @@ describe("T-419: メモの状態の表示", () => {
     await resume(user);
 
     await user.click(button("メモ"));
-    expect(screen.getByRole("main")).toHaveClass("bg-yellow-100");
-    expect(noteStatus()).toHaveTextContent("メモ入力中");
+    expectNoteMode();
 
     await user.click(button("メモ"));
-    expect(screen.getByRole("main")).not.toHaveClass("bg-yellow-100");
-    expect(noteStatus()).toHaveTextContent(/^$/);
+    expectNumberMode();
   });
 
   it("T-419: M のキーで切り替えても同じに表示が変わる", async () => {
@@ -867,11 +880,28 @@ describe("T-419: メモの状態の表示", () => {
     await resume(user);
 
     await user.keyboard("m");
-    expect(screen.getByRole("main")).toHaveClass("bg-yellow-100");
-    expect(noteStatus()).toHaveTextContent("メモ入力中");
+    expectNoteMode();
 
     await user.keyboard("M");
-    expect(screen.getByRole("main")).not.toHaveClass("bg-yellow-100");
-    expect(noteStatus()).toHaveTextContent(/^$/);
+    expectNumberMode();
+  });
+
+  it("T-419: メモの状態で一時停止しても、背景と「メモ入力中」は残る", async () => {
+    const { user } = setup(freshGame());
+    await resume(user);
+    await user.keyboard("m");
+
+    await user.click(button("一時停止"));
+
+    expect(screen.getByText("一時停止中")).toBeInTheDocument();
+    expectNoteMode();
+  });
+
+  it("T-419: 終わったゲームでは、M のキーでもメモの状態にならない(メモの状態ではゲームが終わらないので、終了後に出ることは無い)", async () => {
+    const { user } = setup(clearedGame());
+    await user.keyboard("m");
+
+    expect(main()).not.toHaveClass("bg-yellow-100");
+    expect(screen.queryByText("メモ入力中")).not.toBeInTheDocument();
   });
 });

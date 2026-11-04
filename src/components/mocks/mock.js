@@ -154,13 +154,15 @@ function renderPlay(root, { hidden = false, disabled = false, mistakes = 1, time
         <span class="tabular-nums">${time}</span>
         <button class="h-11 rounded-lg border bg-white px-3 font-medium">${pauseLabel}</button>
       </header>
-      <p role="status" class="mt-2 h-5 text-center text-sm font-bold text-yellow-900">${noteMode ? "メモ入力中" : ""}</p>
-      <div class="mt-1 grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem]">
-        <div class="relative">
-          <div id="board"></div>
-          <div id="overlay"></div>
+      <div class="mt-2 grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem]">
+        <div>
+          <p role="status" class="h-5 text-center text-sm font-bold text-yellow-900">${noteMode ? "メモ入力中" : `<span class="sr-only">数字入力中</span>`}</p>
+          <div class="relative mt-1">
+            <div id="board"></div>
+            <div id="overlay"></div>
+          </div>
         </div>
-        <div id="controls"></div>
+        <div class="md:pt-6"><div id="controls"></div></div>
       </div>
     </div>
     </main>`;
