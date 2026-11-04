@@ -17,6 +17,13 @@ export const SOLUTION_B = 6;
 export const SOLUTION_C = 8;
 export const SOLUTION_D = 9;
 
+// マス 2(BLANK_A、0 行 2 列、左上のブロック)から見た、メモを置く空欄(G-33 のテストで使う)。
+// 解はどれも 4 と違う。関係が名前のとおりであることは、input.test.ts の前提のテストで確かめる
+export const ROW_PEER = BLANK_B; // 同じ行(0 行 3 列、解は 6)
+export const BOX_PEER = 10; // 同じブロックだけ(1 行 1 列、解は 7)
+export const COL_PEER = 29; // 同じ列だけ(3 行 2 列、解は 9)
+export const OUTSIDE = 40; // 行・列・ブロックの外(4 行 4 列、解は 5)
+
 // UNIQUE_PUZZLE の 1 マス目(解は 5)と 81 マス目(解は 9)の手がかりを抜いた問題。
 // マスの番号の境界(0 と 80)に入力できることを確かめるために使う。
 // 抜いても解が 1 つのままであることは、input.test.ts の前提のテストで確かめる

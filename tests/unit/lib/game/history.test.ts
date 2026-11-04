@@ -7,6 +7,8 @@ import { toggleNote } from "@/lib/game/notes";
 import {
   BLANK_A,
   BLANK_B,
+  BOX_PEER,
+  ROW_PEER,
   SOLUTION_A,
   entry,
   freshGame,
@@ -265,5 +267,25 @@ describe("T-125: 元に戻した正解のマス", () => {
   it("T-125: 元に戻して正解のマスが空欄に戻ると、消すは何も変えない", () => {
     const undone = undo(inputDigit(freshGame(), BLANK_A, SOLUTION_A));
     expect(eraseCell(undone, BLANK_A)).toBe(undone);
+  });
+});
+
+describe("T-126: 自動で消えたメモの元に戻す・やり直し", () => {
+  it("T-126: 元に戻す 1 回で、入力と消えたメモが一緒に戻り、やり直しで再び消える", () => {
+    // 同じ行(ROW_PEER)と同じブロック(BOX_PEER)のメモの 4 が消える
+    const before = withNotes(freshGame(), {
+      [BLANK_A]: [4, 7],
+      [ROW_PEER]: [4, 6],
+      [BOX_PEER]: [4, 7],
+    });
+    const after = inputDigit(before, BLANK_A, SOLUTION_A);
+    expect(after.notes[ROW_PEER]).toEqual([6]);
+    expect(after.notes[BOX_PEER]).toEqual([7]);
+
+    const undone = undo(after);
+    expect({ ...undone, redoStack: [] }).toEqual(before);
+
+    const redone = redo(undone);
+    expect(redone).toEqual(after);
   });
 });
