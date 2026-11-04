@@ -60,7 +60,7 @@ function renderBoard(el, { hidden = false } = {}) {
         n === valueAt(SELECTED) ? "rounded-full bg-blue-200 font-bold text-blue-800" : "";
       const body = value
         ? `<span class="text-lg sm:text-2xl ${text}">${value}</span>`
-        : `<span class="grid h-full w-full grid-cols-3 p-px text-[8px] leading-none text-gray-500 sm:text-[10px]">${[1, 2, 3, 4, 5, 6, 7, 8, 9]
+        : `<span class="grid h-full w-full grid-cols-3 p-px text-[8px] leading-none text-gray-600 sm:text-[10px] md:text-sm">${[1, 2, 3, 4, 5, 6, 7, 8, 9]
             .map((n) => `<span class="flex items-center justify-center ${notes.includes(n) ? noteClass(n) : ""}">${notes.includes(n) ? n : ""}</span>`)
             .join("")}</span>`;
       return `<div role="gridcell" class="flex aspect-square min-w-0 items-center justify-center ${right} ${bottom} ${bg} ${ring}">${body}</div>`;

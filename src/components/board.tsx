@@ -166,7 +166,7 @@ export function Board({
                 ) : (
                   <span
                     aria-hidden="true"
-                    className="grid h-full w-full grid-cols-3 p-px text-[8px] leading-none text-gray-500 sm:text-[10px]"
+                    className="grid h-full w-full grid-cols-3 p-px text-[8px] leading-none text-gray-600 sm:text-[10px] md:text-sm"
                   >
                     {DIGITS.map((d) => {
                       const noted = game.notes[index]!.includes(d);
