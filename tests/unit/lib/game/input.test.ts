@@ -9,8 +9,12 @@ import {
   BLANK_B,
   BLANK_C,
   BLANK_D,
+  BOX_PEER,
   CLUE_INDEX,
+  COL_PEER,
   EDGE_PUZZLE,
+  OUTSIDE,
+  ROW_PEER,
   SOLUTION_A,
   SOLUTION_B,
   SOLUTION_C,
@@ -79,7 +83,7 @@ describe("inputDigit", () => {
       expect(next.status).toBe("playing");
     });
 
-    it("T-101: ほかのマスの数字とメモは変わらない", () => {
+    it("T-101: ほかのマスの数字と、入れた数字を含まないメモは変わらない(含むメモは T-113)", () => {
       const state = withNotes(freshGame(), {
         [BLANK_A]: [1, 4, 7],
         [BLANK_B]: [2, 5],
@@ -368,27 +372,26 @@ describe("eraseCell", () => {
   });
 });
 
-// マス 2(BLANK_A、0 行 2 列、左上のブロック)から見た、メモを置くマス。
-// どれも問題の空欄で、解は 4 と違う(前提のテストで確かめる)
-const ROW_PEER = BLANK_B; // 同じ行(0 行 3 列、解は 6)
-const BOX_PEER = 10; // 同じブロックだけ(1 行 1 列、解は 7)
-const COL_PEER = 29; // 同じ列だけ(3 行 2 列、解は 9)
-const OUTSIDE = 40; // 行・列・ブロックの外(4 行 4 列、解は 5)
-
 describe("T-113: 正解を入れたときのメモの自動の消去", () => {
   it("T-113: 前提(メモを置くマスは空欄で、行・列・ブロックの関係が名前のとおり)", () => {
     for (const i of [ROW_PEER, BOX_PEER, COL_PEER, OUTSIDE]) {
       expect(UNIQUE_PUZZLE[i]).toBe(0);
       expect(UNIQUE_SOLUTION[i]).not.toBe(SOLUTION_A);
     }
-    expect(PEERS[BLANK_A]).toEqual(
-      expect.arrayContaining([ROW_PEER, BOX_PEER, COL_PEER]),
-    );
-    expect(PEERS[BLANK_A]).not.toContain(OUTSIDE);
-    // BOX_PEER は行も列も違い、COL_PEER はブロックが違う
-    expect(Math.floor(BOX_PEER / 9)).not.toBe(Math.floor(BLANK_A / 9));
-    expect(BOX_PEER % 9).not.toBe(BLANK_A % 9);
-    expect(Math.floor(COL_PEER / 27)).not.toBe(Math.floor(BLANK_A / 27));
+    // 本番の PEERS を使わず、行・列・ブロックの番号を計算して確かめる
+    const row = (i: number) => Math.floor(i / 9);
+    const col = (i: number) => i % 9;
+    const box = (i: number) =>
+      Math.floor(row(i) / 3) * 3 + Math.floor(col(i) / 3);
+    const relation = (i: number) => [
+      row(i) === row(BLANK_A),
+      col(i) === col(BLANK_A),
+      box(i) === box(BLANK_A),
+    ];
+    expect(relation(ROW_PEER)).toEqual([true, false, false]);
+    expect(relation(BOX_PEER)).toEqual([false, false, true]);
+    expect(relation(COL_PEER)).toEqual([false, true, false]);
+    expect(relation(OUTSIDE)).toEqual([false, false, false]);
   });
 
   function notedGame() {
