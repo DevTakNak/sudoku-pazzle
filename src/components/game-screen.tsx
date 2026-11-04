@@ -12,6 +12,7 @@ import { formatElapsed } from "@/lib/game/timer";
 import { MAX_MISTAKES } from "@/lib/game/types";
 import type { GameState } from "@/lib/game/types";
 import { colOf, rowOf } from "@/lib/sudoku/grid";
+import { cn } from "@/lib/utils";
 
 import { Board, DIGITS } from "./board";
 import { ClearedDialog, FailedDialog } from "./game-dialogs";
@@ -140,77 +141,87 @@ export function GameScreen() {
   const canRedo = running && game.redoStack.length > 0;
   const showPaused = playing && paused;
 
+  // メモの状態のときだけ、背景を薄い黄色にする(どちらの状態かを見て分かるように)
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-4">
-      <header className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <Link
-          href="/"
-          className="flex h-11 min-w-11 items-center justify-center font-medium text-blue-700 underline"
+    <main className={cn("w-full flex-1", noteMode && "bg-yellow-100")}>
+      <div className="mx-auto w-full max-w-4xl px-4 py-4">
+        <header className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <Link
+            href="/"
+            className="flex h-11 min-w-11 items-center justify-center font-medium text-blue-700 underline"
+          >
+            ホーム
+          </Link>
+          <span className="font-medium">
+            {DIFFICULTY_LABELS[game.difficulty]}
+          </span>
+          <span aria-live="polite">
+            間違い {game.mistakes}/{MAX_MISTAKES}
+          </span>
+          <span className="tabular-nums">
+            {formatElapsed(game.elapsedSeconds)}
+          </span>
+          <button
+            type="button"
+            disabled={!playing}
+            onClick={() => store.setPaused(!paused)}
+            className="h-11 rounded-lg border bg-white px-3 font-medium disabled:opacity-40"
+          >
+            {showPaused ? "再開" : "一時停止"}
+          </button>
+        </header>
+        {/* 色だけに頼らず、文言でも知らせる(N-03)。行の高さは取っておき、盤面を動かさない */}
+        <p
+          role="status"
+          className="mt-2 h-5 text-center text-sm font-bold text-yellow-900"
         >
-          ホーム
-        </Link>
-        <span className="font-medium">
-          {DIFFICULTY_LABELS[game.difficulty]}
-        </span>
-        <span aria-live="polite">
-          間違い {game.mistakes}/{MAX_MISTAKES}
-        </span>
-        <span className="tabular-nums">
-          {formatElapsed(game.elapsedSeconds)}
-        </span>
-        <button
-          type="button"
-          disabled={!playing}
-          onClick={() => store.setPaused(!paused)}
-          className="h-11 rounded-lg border bg-white px-3 font-medium disabled:opacity-40"
-        >
-          {showPaused ? "再開" : "一時停止"}
-        </button>
-      </header>
-      <div className="mt-3 grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem]">
-        <div className="relative">
-          <Board
-            game={game}
-            selected={showPaused ? null : selected}
-            hidden={showPaused}
-            onSelect={(index) => {
-              if (running) setSelected(index);
-            }}
+          {noteMode ? "メモ入力中" : ""}
+        </p>
+        <div className="mt-1 grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem]">
+          <div className="relative">
+            <Board
+              game={game}
+              selected={showPaused ? null : selected}
+              hidden={showPaused}
+              onSelect={(index) => {
+                if (running) setSelected(index);
+              }}
+            />
+            {showPaused && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/80">
+                <p className="text-lg font-bold">一時停止中</p>
+                <button
+                  type="button"
+                  onClick={() => store.setPaused(false)}
+                  className="h-11 rounded-lg bg-blue-700 px-6 font-medium text-white"
+                >
+                  再開
+                </button>
+              </div>
+            )}
+          </div>
+          <Controls
+            disabled={controlsDisabled}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            noteMode={noteMode}
+            onUndo={() => store.updateGame(undo)}
+            onRedo={() => store.updateGame(redo)}
+            onErase={erase}
+            onToggleNoteMode={() => setNoteMode((m) => !m)}
+            onDigit={enterDigit}
           />
-          {showPaused && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/80">
-              <p className="text-lg font-bold">一時停止中</p>
-              <button
-                type="button"
-                onClick={() => store.setPaused(false)}
-                className="h-11 rounded-lg bg-blue-700 px-6 font-medium text-white"
-              >
-                再開
-              </button>
-            </div>
-          )}
         </div>
-        <Controls
-          disabled={controlsDisabled}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          noteMode={noteMode}
-          onUndo={() => store.updateGame(undo)}
-          onRedo={() => store.updateGame(redo)}
-          onErase={erase}
-          onToggleNoteMode={() => setNoteMode((m) => !m)}
-          onDigit={enterDigit}
+        <EndDialog
+          game={game}
+          stats={stats[game.difficulty]}
+          bestUpdated={bestUpdated}
+          onShowStats={() => router.push("/stats")}
+          onNewGame={() => router.push("/")}
+          // 選んだマスは残す(ダイアログを閉じるとフォーカスが元のマスに戻り、そのマスを選ぶため)
+          onRestart={() => store.restart()}
         />
       </div>
-      <EndDialog
-        game={game}
-        stats={stats[game.difficulty]}
-        bestUpdated={bestUpdated}
-        onShowStats={() => router.push("/stats")}
-        onNewGame={() => router.push("/")}
-        // 選んだマスは残す(ダイアログを閉じるとフォーカスが元のマスに戻り、そのマスを選ぶため)
-        onRestart={() => store.restart()}
-      />
     </main>
   );
 }

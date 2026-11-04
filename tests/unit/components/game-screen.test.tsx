@@ -732,3 +732,44 @@ describe("T-408: React の StrictMode(開発サーバー)でも同じに動く",
     },
   );
 });
+
+describe("T-419: メモの状態の表示", () => {
+  function noteStatus(): HTMLElement {
+    return within(screen.getByRole("main")).getByRole("status");
+  }
+
+  it("T-419: 数字の状態では、背景は薄い黄色でなく、「メモ入力中」も出ない", async () => {
+    const { user } = setup(freshGame());
+    await resume(user);
+
+    expect(screen.getByRole("main")).not.toHaveClass("bg-yellow-100");
+    expect(noteStatus()).toHaveTextContent(/^$/);
+    expect(screen.queryByText("メモ入力中")).not.toBeInTheDocument();
+  });
+
+  it("T-419: 「メモ」のボタンでメモの状態にすると、背景が薄い黄色になり「メモ入力中」が出て、戻すと消える", async () => {
+    const { user } = setup(freshGame());
+    await resume(user);
+
+    await user.click(button("メモ"));
+    expect(screen.getByRole("main")).toHaveClass("bg-yellow-100");
+    expect(noteStatus()).toHaveTextContent("メモ入力中");
+
+    await user.click(button("メモ"));
+    expect(screen.getByRole("main")).not.toHaveClass("bg-yellow-100");
+    expect(noteStatus()).toHaveTextContent(/^$/);
+  });
+
+  it("T-419: M のキーで切り替えても同じに表示が変わる", async () => {
+    const { user } = setup(freshGame());
+    await resume(user);
+
+    await user.keyboard("m");
+    expect(screen.getByRole("main")).toHaveClass("bg-yellow-100");
+    expect(noteStatus()).toHaveTextContent("メモ入力中");
+
+    await user.keyboard("M");
+    expect(screen.getByRole("main")).not.toHaveClass("bg-yellow-100");
+    expect(noteStatus()).toHaveTextContent(/^$/);
+  });
+});
