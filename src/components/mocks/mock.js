@@ -64,13 +64,25 @@ function renderBoard(el, { hidden = false } = {}) {
     .join("");
 }
 
+// 9 か所すべてに正解が入った数字
+function completedDigits() {
+  return [1, 2, 3, 4, 5, 6, 7, 8, 9].filter(
+    (n) => [...Array(81).keys()].filter((i) => valueAt(i) === n && !isWrong(i)).length === 9,
+  );
+}
+
 function renderControls(el, { disabled = false } = {}) {
+  const completed = completedDigits();
   const state = disabled ? "disabled" : "";
   const dim = disabled ? "opacity-40" : "";
   const action = (label, extra = "") =>
     `<button ${state} class="h-12 min-w-0 rounded-lg border bg-white px-1 text-sm font-medium ${dim} ${extra}">${label}</button>`;
   const digits = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    .map((n) => `<button ${state} class="h-12 rounded-lg border bg-white text-xl font-medium md:h-16 ${dim}">${n}</button>`)
+    .map((n) =>
+      completed.includes(n)
+        ? `<button disabled class="h-12 rounded-lg border border-gray-200 bg-gray-200 text-xl font-medium text-gray-400 md:h-16 ${dim}">${n}</button>`
+        : `<button ${state} class="h-12 rounded-lg border bg-white text-xl font-medium md:h-16 ${dim}">${n}</button>`,
+    )
     .join("");
   el.innerHTML = `
     <div class="grid grid-cols-4 gap-2 md:grid-cols-2">
@@ -120,7 +132,13 @@ function renderHome(root, { showContinue = true, generating = false, dialog = nu
     ${dialog ? dialogHtml(dialog) : ""}`;
 }
 
-function renderPlay(root, { hidden = false, disabled = false, mistakes = 1, time = "12:34", pauseLabel = "一時停止" } = {}) {
+// completeDigit: その数字の空欄をすべて正解で埋める(入れ終わった数字のボタンを見せる)
+function renderPlay(root, { hidden = false, disabled = false, mistakes = 1, time = "12:34", pauseLabel = "一時停止", completeDigit = 0 } = {}) {
+  if (completeDigit) {
+    for (const i of Array(81).keys()) {
+      if (Number(SOLUTION[i]) === completeDigit && Number(PUZZLE[i]) === 0) ENTERED[i] = completeDigit;
+    }
+  }
   root.innerHTML = `
     <main class="mx-auto w-full max-w-4xl px-4 py-4">
       <header class="flex flex-wrap items-center justify-between gap-2 text-sm">

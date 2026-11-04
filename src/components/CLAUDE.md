@@ -7,7 +7,7 @@
 | パス | 画面 | モック |
 | --- | --- | --- |
 | `/` | ホーム | [home.html](mocks/home.html)(続きあり)、[home-confirm.html](mocks/home-confirm.html)(上書きの確認)、[home-generating.html](mocks/home-generating.html)(問題を作っている)、[home-error.html](mocks/home-error.html)(作れなかった) |
-| `/play` | ゲーム | [play.html](mocks/play.html)(プレイ中)、[play-paused.html](mocks/play-paused.html)(一時停止)、[play-cleared.html](mocks/play-cleared.html)(クリア)、[play-failed.html](mocks/play-failed.html)(失敗) |
+| `/play` | ゲーム | [play.html](mocks/play.html)(プレイ中)、[play-paused.html](mocks/play-paused.html)(一時停止)、[play-completed.html](mocks/play-completed.html)(9 か所そろった数字のボタン)、[play-cleared.html](mocks/play-cleared.html)(クリア)、[play-failed.html](mocks/play-failed.html)(失敗) |
 | `/stats` | 成績 | [stats.html](mocks/stats.html) |
 
 モックを `http://127.0.0.1:8000/` で配るときの手順は、技術ルールの `shadcn-tailwind.md` に従う。
@@ -101,7 +101,7 @@ flowchart TD
 | 一時停止のボタン | 一時停止 / 再開 | 押すたびに切り替える。クリアや失敗で終わったゲームでは押せない(2026-11-03 のフェーズ 6 の網羅確認で、実装に合わせて書いた) |
 | 盤面 | | 下の「盤面」 |
 | 操作のボタン | 元に戻す / やり直し / 消す / メモ | 「元に戻す」「やり直し」は、できないときは押せない。「メモ」は入力の状態を切り替え、オンを見て分かるようにする |
-| 数字のボタン | 1〜9 | 選んでいるマスに入力する。9 か所すべてに正解が入った数字(手がかりを含む)のボタンは、押せなくし灰色にする。メモの状態でも同じ。「元に戻す」などで 9 か所より少なくなれば、また押せる(2026-11-04 にユーザが決めた。Issue #9) |
+| 数字のボタン | 1〜9 | 選んでいるマスに入力する。9 か所すべてに正解が入った数字(手がかりを含む)のボタンは、押せなくし灰色にする。メモの状態でも同じ。正解の入ったマスは変更も消去もできない(G-21)ので、9 か所より少なくなるのは「元に戻す」のときだけで、そのときはまた押せる(2026-11-04 にユーザが決めた。Issue #9) |
 
 ### 盤面
 
