@@ -9,8 +9,12 @@ import {
   BLANK_B,
   BLANK_C,
   BLANK_D,
+  BOX_PEER,
   CLUE_INDEX,
+  COL_PEER,
   EDGE_PUZZLE,
+  OUTSIDE,
+  ROW_PEER,
   SOLUTION_A,
   SOLUTION_B,
   SOLUTION_C,
@@ -79,7 +83,7 @@ describe("inputDigit", () => {
       expect(next.status).toBe("playing");
     });
 
-    it("T-101: ほかのマスの数字とメモは変わらない", () => {
+    it("T-101: ほかのマスの数字と、入れた数字を含まないメモは変わらない(含むメモは T-113)", () => {
       const state = withNotes(freshGame(), {
         [BLANK_A]: [1, 4, 7],
         [BLANK_B]: [2, 5],
@@ -365,5 +369,87 @@ describe("eraseCell", () => {
       emptyNotes().map((_, i) => (i === BLANK_B ? [2] : [])),
     );
     expect(next.values).toEqual(UNIQUE_PUZZLE);
+  });
+});
+
+describe("T-113: 正解を入れたときのメモの自動の消去", () => {
+  it("T-113: 前提(メモを置くマスは空欄で、行・列・ブロックの関係が名前のとおり)", () => {
+    for (const i of [ROW_PEER, BOX_PEER, COL_PEER, OUTSIDE]) {
+      expect(UNIQUE_PUZZLE[i]).toBe(0);
+      expect(UNIQUE_SOLUTION[i]).not.toBe(SOLUTION_A);
+    }
+    // 本番の PEERS を使わず、行・列・ブロックの番号を計算して確かめる
+    const row = (i: number) => Math.floor(i / 9);
+    const col = (i: number) => i % 9;
+    const box = (i: number) =>
+      Math.floor(row(i) / 3) * 3 + Math.floor(col(i) / 3);
+    const relation = (i: number) => [
+      row(i) === row(BLANK_A),
+      col(i) === col(BLANK_A),
+      box(i) === box(BLANK_A),
+    ];
+    expect(relation(ROW_PEER)).toEqual([true, false, false]);
+    expect(relation(BOX_PEER)).toEqual([false, false, true]);
+    expect(relation(COL_PEER)).toEqual([false, true, false]);
+    expect(relation(OUTSIDE)).toEqual([false, false, false]);
+  });
+
+  function notedGame() {
+    return withNotes(freshGame(), {
+      [BLANK_A]: [1, 4],
+      [ROW_PEER]: [1, 4, 6],
+      [BOX_PEER]: [4, 7],
+      [COL_PEER]: [1, 4],
+      [OUTSIDE]: [4, 5],
+    });
+  }
+
+  it("T-113: 同じ行・列・ブロックのメモからその数字だけが消え、外のメモは残る", () => {
+    const next = inputDigit(notedGame(), BLANK_A, SOLUTION_A);
+    expect(next.values[BLANK_A]).toBe(SOLUTION_A);
+    expect(next.notes[BLANK_A]).toEqual([]);
+    expect(next.notes[ROW_PEER]).toEqual([1, 6]);
+    expect(next.notes[BOX_PEER]).toEqual([7]);
+    expect(next.notes[COL_PEER]).toEqual([1]);
+    expect(next.notes[OUTSIDE]).toEqual([4, 5]);
+    expect(next.mistakes).toBe(0);
+  });
+
+  it("T-113: 消したメモは入力と 1 つの操作として履歴に残る", () => {
+    const state = notedGame();
+    const next = inputDigit(state, BLANK_A, SOLUTION_A);
+    expect(next.undoStack).toHaveLength(1);
+    const { before, after } = next.undoStack[0]!;
+    const byIndex = (cells: typeof before) =>
+      Object.fromEntries(cells.map((c) => [c.index, c]));
+    expect(byIndex(before)).toEqual({
+      [BLANK_A]: snapshot(BLANK_A, 0, [1, 4]),
+      [ROW_PEER]: snapshot(ROW_PEER, 0, [1, 4, 6]),
+      [BOX_PEER]: snapshot(BOX_PEER, 0, [4, 7]),
+      [COL_PEER]: snapshot(COL_PEER, 0, [1, 4]),
+    });
+    expect(byIndex(after)).toEqual({
+      [BLANK_A]: snapshot(BLANK_A, SOLUTION_A, []),
+      [ROW_PEER]: snapshot(ROW_PEER, 0, [1, 6]),
+      [BOX_PEER]: snapshot(BOX_PEER, 0, [7]),
+      [COL_PEER]: snapshot(COL_PEER, 0, [1]),
+    });
+    // 消すメモが無いときは、入力したマスだけが履歴に残る
+    const plain = inputDigit(freshGame(), BLANK_A, SOLUTION_A);
+    expect(plain.undoStack).toEqual([
+      entry(snapshot(BLANK_A, 0, []), snapshot(BLANK_A, SOLUTION_A, [])),
+    ]);
+  });
+
+  it("T-113: 誤りの数字を入れたときは、ほかのマスのメモを消さない", () => {
+    const state = notedGame();
+    const next = inputDigit(state, BLANK_A, WRONG);
+    expect(next.values[BLANK_A]).toBe(WRONG);
+    expect(next.notes[BLANK_A]).toEqual([]);
+    expect(next.notes[ROW_PEER]).toEqual([1, 4, 6]);
+    expect(next.notes[COL_PEER]).toEqual([1, 4]);
+    expect(next.undoStack).toEqual([
+      entry(snapshot(BLANK_A, 0, [1, 4]), snapshot(BLANK_A, WRONG, [])),
+    ]);
   });
 });

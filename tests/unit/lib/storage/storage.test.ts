@@ -22,13 +22,17 @@ import {
   BLANK_A,
   BLANK_B,
   BLANK_C,
+  BOX_PEER,
   EDGE_PUZZLE,
+  ROW_PEER,
+  SOLUTION_A,
   clearedGame,
   entry,
   failedGame,
   freshGame,
   richPlayingGame,
   snapshot,
+  withNotes,
 } from "../../../helpers/game";
 import {
   UNIQUE_PUZZLE,
@@ -1182,6 +1186,24 @@ describe("T-301: 実際の操作で作った状態も、保存して読み込む
       expect([...seen].sort()).toEqual(["mistakes", "notes", "redo", "undo"]);
     },
   );
+
+  it("T-301: 正解の入力でメモが自動で消えた、複数マスの履歴(G-33)も同じに戻り、読み込んだ後に元に戻せる", () => {
+    const before = withNotes(
+      createGame("easy", UNIQUE_PUZZLE, UNIQUE_SOLUTION),
+      {
+        [BLANK_A]: [4, 7],
+        [ROW_PEER]: [4, 6],
+        [BOX_PEER]: [4, 7],
+      },
+    );
+    const state = inputDigit(before, BLANK_A, SOLUTION_A);
+    // 入力したマスと、メモを消した 2 マスが 1 つの履歴に入っている
+    expect(state.undoStack.at(-1)!.after).toHaveLength(3);
+
+    const loaded = roundTrip(state);
+    expect(loaded).toEqual(state);
+    expect({ ...undo(loaded!), redoStack: [] }).toEqual(before);
+  });
 
   it("T-301: 間違いを 3 回入れて失敗したゲーム", () => {
     let state = createGame("hard", UNIQUE_PUZZLE, UNIQUE_SOLUTION);
